@@ -1,7 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.AppConstant;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -11,7 +12,6 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +22,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserModel implements UserDetails {
+public class UserModel extends BaseEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +38,17 @@ public class UserModel implements UserDetails {
     @NotEmpty(message = "Password For User Can't Be Empty !")
     private String userPassword;
 
+    @Column(unique = true,nullable = false)
+    @NotEmpty(message = "Email Can't Be Empty !")
+    @Email(
+            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",
+            message = "Invalid email format!"
+    )
+    private String userEmail;
+
+    @Column(length = 500)
+    private String userImageUrl;
+
     @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     @JoinTable(
             name = "tbl_user_roles",
@@ -45,6 +56,12 @@ public class UserModel implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id",referencedColumnName = "roleId")
     )
     private Set<RoleModel> roles = new HashSet<>();
+
+    private boolean userAccountNonExpired = true;
+    private boolean userAccountNonLocked = true;
+    private boolean userCredentialsNonExpired = true;
+    private boolean userEnabled = true;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -63,21 +80,19 @@ public class UserModel implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return AppConstant.TRUE_VALUE;
+        return this.userAccountNonExpired;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return AppConstant.TRUE_VALUE;
+        return this.userAccountNonLocked;
     }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return AppConstant.TRUE_VALUE;
-    }
+    public boolean isCredentialsNonExpired() { return this.userCredentialsNonExpired; }
 
     @Override
     public boolean isEnabled() {
-        return AppConstant.TRUE_VALUE;
+        return this.userEnabled;
     }
 }

@@ -1,12 +1,10 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "tbl_role")
@@ -20,9 +18,9 @@ public class RoleModel {
     @Column(nullable = false,length = 10)
     private Integer roleId;
 
-    @Column(unique = true,length = 15)
+    @Column(unique = true,length = 30)
     @NotEmpty(message = "Role Can't Be Empty !")
-    @Size(min = 1,max = 15)
+    @Size(min = 1,max = 30)
     private String role;
 
 }

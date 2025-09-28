@@ -6,6 +6,8 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.re
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.util.Arrays;
+
 @SpringBootApplication
 public class PreRunner implements CommandLineRunner {
 
@@ -18,20 +20,20 @@ public class PreRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
-            if (!roleRepository.existsByRole("ROLE_USER")) {
-                RoleModel simpleUser = new RoleModel();
-                simpleUser.setRoleId(AppConstant.NORMAL_ROLE); // only if NOT auto-generated
-                simpleUser.setRole("ROLE_USER");
-                roleRepository.save(simpleUser);
-            }
-
-            if (!roleRepository.existsByRole("ROLE_ADMIN")) {
-                RoleModel adminUser = new RoleModel();
-                adminUser.setRoleId(AppConstant.ADMIN_ROLE); // only if NOT auto-generated
-                adminUser.setRole("ROLE_ADMIN");
-                roleRepository.save(adminUser);
+            String[] roles = {
+                    "ROLE_NORMAL","ROLE_ADMIN","ROLE_RECRUITER","ROLE_HR","ROLE_INTERVIEWER","ROLE_CANDIDATE"
+            };
+            /*
+            for (String role : roles) {
+                if(!roleRepository.existsByRole(role)){
+                    RoleModel roleModel = new RoleModel();
+                    roleModel.setRoleId(AppConstant.getRoleId(role));
+                    roleModel.setRole(role);
+                    roleRepository.save(roleModel);
+                }
             }
             System.out.println("Roles added successfully!");
+            */
         } catch (Exception ex) {
             ex.printStackTrace();
         }
