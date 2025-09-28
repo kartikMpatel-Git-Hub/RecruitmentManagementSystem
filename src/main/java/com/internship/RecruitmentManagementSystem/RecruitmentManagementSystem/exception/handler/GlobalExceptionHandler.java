@@ -1,11 +1,17 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.handler;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.CustomFieldAlreadyExistsException;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ErrorResponseException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.JwtAuthenticationException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiObjectResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
@@ -15,6 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.security.auth.login.CredentialException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,5 +96,64 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse> HttpRequestMethodNotSupportedHandler(HttpRequestMethodNotSupportedException ex){
         return new ResponseEntity<>(new ApiResponse(405,"Requested Method With This Path Not Found",false), HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
+    // SQLIntegrityConstraintViolationException
+    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
+    public ResponseEntity<ApiResponse> handleSQLIntegrityConstraintViolation(SQLIntegrityConstraintViolationException ex) {
+        String message = ex.getMessage(); // e.g., "Duplicate entry 'kartik' for key 'tbl_user.UK6jr81l5qqpxjp72fgi23ubqc9'"
+        String userFriendlyMessage = "Duplicate value";
+
+        if (message != null && message.contains("Duplicate entry")) {
+            if (message.contains("user_name")) {
+                userFriendlyMessage = "Username already exists";
+            }
+            // You can check for other fields too:
+            // else if (message.contains("email")) { userFriendlyMessage = "Email already exists"; }
+        }
+
+        return new ResponseEntity<>(new ApiResponse(400, userFriendlyMessage, false), HttpStatus.BAD_REQUEST);
+    }
+
+    // CustomFieldAlreadyExistsException
+    @ExceptionHandler(CustomFieldAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse> CustomFieldAlreadyExistsExceptionHandler(CustomFieldAlreadyExistsException ex){
+        String error = ex.getMessage();
+        return new ResponseEntity<>(new ApiResponse(400, error, false), HttpStatus.BAD_REQUEST);
+    }
+
+    // ErrorResponseException
+    @ExceptionHandler(ErrorResponseException.class)
+    public ResponseEntity<ErrorResponse> ErrorResponseExceptionHandler(ErrorResponseException ex){
+        String error = ex.getMessage();
+        return new ResponseEntity<>(ex.getError(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> DuplicateEntryHandler(DataIntegrityViolationException ex) {
+        return new ResponseEntity<>(
+                new ApiObjectResponse(400, "Duplicate entry: value already exists", false),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> HttpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex) {
+        String message = ex.getMostSpecificCause().getMessage();
+        if (message != null && message.contains("Stream")) {
+            return new ResponseEntity<>(
+                    new ErrorResponse(400,"Invalid Value",List.of("Must be arts, commerce, science"),false),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        return new ResponseEntity<>(
+                new ApiObjectResponse(
+                        400,
+                        "Malformed JSON request: " + ex.getMessage(),
+                        false
+                ),
+                HttpStatus.BAD_REQUEST
+        );
     }
 }

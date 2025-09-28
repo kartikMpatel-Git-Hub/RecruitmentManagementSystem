@@ -1,23 +1,20 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos;
-
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoleDto {
+public class DegreeDto {
 
-    private Integer roleId;
+    private Integer degreeId;
 
-    private String role;
+    private String degree;
 
-    private LocalDateTime createdAt;
+    private Stream stream;
 
-    private LocalDateTime updatedAt;
 }
