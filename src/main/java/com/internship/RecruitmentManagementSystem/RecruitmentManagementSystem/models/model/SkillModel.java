@@ -4,23 +4,26 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.co
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(name = "tbl_role")
+@Table(name = "tbl_skill")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoleModel extends BaseEntity{
+public class SkillModel extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false,length = 10)
-    private Integer roleId;
+    private Integer skillId;
 
     @Column(unique = true,length = 30)
-    @NotEmpty(message = "Role Can't Be Empty !")
+    @NotEmpty(message = "Skill Can't Be Empty !")
     @Size(min = 1,max = 30)
-    private String role;
-
+    private String skill;
 }

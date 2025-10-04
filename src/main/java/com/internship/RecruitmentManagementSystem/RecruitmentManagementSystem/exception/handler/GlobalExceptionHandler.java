@@ -1,9 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.handler;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.CustomFieldAlreadyExistsException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ErrorResponseException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.JwtAuthenticationException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiObjectResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
@@ -60,10 +57,10 @@ public class GlobalExceptionHandler {
         );
     }
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ApiResponse> DisabledExceptionHandler(DisabledException ex) {
+    public ResponseEntity<?> DisabledExceptionHandler(DisabledException ex) {
         return new ResponseEntity<>(
-                new ApiResponse(401,"User Is Disabled !", false),
-                HttpStatus.UNAUTHORIZED
+                "User is disabled, please contact admin",
+                HttpStatus.BAD_REQUEST
         );
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -136,6 +133,17 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST
         );
     }
+//    ResourceAlreadyExistsException
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ResponseEntity<?> ResourceAlreadyExistsExceptionHandler(ResourceAlreadyExistsException ex) {
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+    }
+
+    // FailedProcessException
+    @ExceptionHandler(FailedProcessException.class)
+    public ResponseEntity<?> FailedProcessExceptionHandler(FailedProcessException ex) {
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> HttpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex) {
@@ -156,4 +164,5 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST
         );
     }
+
 }

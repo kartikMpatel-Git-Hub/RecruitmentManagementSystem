@@ -33,10 +33,7 @@ public class UserService implements UserServiceInterface {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
 
-    public UserService(UserRepository userRepository,
-                      ModelMapper modelMapper,
-                      PasswordEncoder passwordEncoder,
-                      RoleRepository roleRepository) {
+    public UserService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
@@ -139,6 +136,9 @@ public class UserService implements UserServiceInterface {
         if (userDto.getUserImageUrl() != null && !userDto.getUserImageUrl().trim().isEmpty()) {
             user.setUserImageUrl(userDto.getUserImageUrl());
         }
+
+        if(userDto.getUserEnabled() != null)
+            user.setUserEnabled(userDto.getUserEnabled());
     }
 
     private void validateEmailUpdate(UserModel user, String newEmail) {

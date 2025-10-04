@@ -1,5 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.FileServiceInterface;
 import org.slf4j.Logger;
@@ -12,12 +14,19 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class FileService implements FileServiceInterface {
 
+    private final Cloudinary cloudinary;
+
+    public FileService(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
-    private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList("jpg", "jpeg", "png");
+    private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList("jpg", "jpeg", "png","pdf","doc","docx");
     private static final String INVALID_IMAGE_FORMAT_MESSAGE = "Image Must Be [JPG|JPEG|PNG] But Found ";
     private static final String FILE_SEPARATOR = File.separator;
 
@@ -27,13 +36,41 @@ public class FileService implements FileServiceInterface {
 
         String fileName = generateFileName(file);
         String filePath = createFilePath(path, fileName);
-
         createDirectoryIfNotExists(path);
         saveFile(file, filePath);
 
-        logger.info("Successfully uploaded file: {}", fileName);
-        return fileName;
+        String imageUrl;
+        try {
+            File localFile = new File(filePath);
+            Map uploadResult = cloudinary.uploader().upload(localFile, ObjectUtils.asMap("resource_type", "auto"));
+            imageUrl = uploadResult.get("secure_url").toString();
+
+            if (localFile.delete()) {
+                logger.info("Temporary local file deleted: {}", filePath);
+            } else {
+                logger.warn("Failed to delete local temp file: {}", filePath);
+            }
+
+        } catch (Exception e) {
+            logger.error("Cloud upload failed. Keeping local file: {}", filePath, e);
+            throw new IOException("Cloud upload failed: " + e.getMessage());
+        }
+
+        return imageUrl;
     }
+
+//    public String uploadImage(String path, MultipartFile file) throws IOException, InvalidImageFormateException {
+//        validateInputs(path, file);
+//
+//        String fileName = generateFileName(file);
+//        String filePath = createFilePath(path, fileName);
+//
+//        createDirectoryIfNotExists(path);
+//        saveFile(file, filePath);
+//
+//        logger.info("Successfully uploaded file: {}", fileName);
+//        return fileName;
+//    }
 
     @Override
     public InputStream getResource(String path, String fileName) throws FileNotFoundException {
