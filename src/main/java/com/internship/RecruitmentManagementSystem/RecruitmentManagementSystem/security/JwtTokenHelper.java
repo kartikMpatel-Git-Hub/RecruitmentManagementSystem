@@ -1,5 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.security;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -23,6 +25,12 @@ public class JwtTokenHelper {
     private String secret;
 
     private Key key;
+
+    private final UserService userService;
+
+    public JwtTokenHelper(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostConstruct
     public void initializeKey(){
@@ -58,10 +66,15 @@ public class JwtTokenHelper {
 
     public String generateToken(UserDetails userDetails){
         Map<String,Object> claims = new HashMap<>();
+        UserDto user = userService.getUserByUserName(userDetails.getUsername());
+        claims.put("userType",user.getRoles().stream().findFirst().get().getRole().toString());
+        claims.put("userEmail",user.getUserEmail());
+        claims.put("userName",userDetails.getUsername());
         return doGenerateToken(claims,userDetails.getUsername());
     }
 
     private String doGenerateToken(Map<String,Object> claims,String subject){
+
         return Jwts.
                 builder().
                 setClaims(claims).

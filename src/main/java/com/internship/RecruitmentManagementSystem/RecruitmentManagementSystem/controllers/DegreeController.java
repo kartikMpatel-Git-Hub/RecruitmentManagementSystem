@@ -12,8 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -41,7 +39,7 @@ public class DegreeController {
         DegreeDto responseDegree = degreeService.addDegree(degreeDto);
         logger.info(DEGREE_ADDED);
         return new ResponseEntity<>(
-                new ApiObjectResponse(200, responseDegree, true),
+                responseDegree,
                 HttpStatus.CREATED);
     }
 
@@ -50,7 +48,7 @@ public class DegreeController {
         logger.info("Getting degree With Id : {}", degreeId);
         DegreeDto degree = degreeService.getDegree(degreeId);
         logger.info("Get degree With Id : {}", degreeId);
-        return new ResponseEntity<>(new ApiObjectResponse(200,degree,true),HttpStatus.OK);
+        return new ResponseEntity<>(degree,HttpStatus.OK);
     }
 
     @GetMapping("/")
@@ -59,7 +57,7 @@ public class DegreeController {
         List<DegreeDto> degree = degreeService.getAllDegrees();
         logger.info("Get All Degree");
         return new ResponseEntity<>(
-                new ApiObjectsResponse(200, Collections.singletonList(degree),true),
+                degree,
                 HttpStatus.OK);
     }
 
@@ -69,7 +67,7 @@ public class DegreeController {
         degreeService.deleteDegree(degreeId);
         logger.info("Deleted degree With Id : {}", degreeId);
         return new ResponseEntity<>(
-                new ApiResponse(200, "Degree Deleted Successfully !",true),
+                "Degree Deleted Successfully !",
                 HttpStatus.OK);
     }
 
@@ -79,7 +77,7 @@ public class DegreeController {
         DegreeDto updatedDegree = degreeService.updateDegree(degreeId,degreeDto);
         logger.info("Updated degree With Id : {}", degreeId);
         return new ResponseEntity<>(
-                new ApiObjectResponse(200, updatedDegree,true),
+                updatedDegree,
                 HttpStatus.OK);
     }
 }

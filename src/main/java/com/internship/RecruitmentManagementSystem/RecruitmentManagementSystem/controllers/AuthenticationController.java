@@ -4,6 +4,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.CandidateModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.requests.JwtAuthenticationRequest;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
@@ -94,10 +95,14 @@ public class AuthenticationController {
 
         authenticate(request.getUserName(), request.getPassword());
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUserName());
+        UserDto user = userService.getUserByUserName(request.getUserName());
         String token = jwtTokenHelper.generateToken(userDetails);
 
         logger.info("Successfully generated token for user: {}", request.getUserName());
-        return new ResponseEntity<>(new JwtAuthenticationResponse(token), HttpStatus.OK);
+        return new ResponseEntity<>(new JwtAuthenticationResponse(
+                token,
+                user.getRoles().stream().findFirst().get().getRole()
+        ), HttpStatus.OK);
     }
 
     @GetMapping("/profile")
@@ -119,8 +124,9 @@ public class AuthenticationController {
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid UserDto request,
-                                           @RequestPart("image") MultipartFile userImage,
-                                           @RequestPart(value = "role", required = false) String userRole) {
+                                             @RequestPart(value = "image",required = true) MultipartFile userImage,
+//                                             @RequestPart(value = "candidate",required = false) CandidateModel userImage,
+                                           @RequestPart(value = "role", required = true) String userRole) {
         logger.info("Attempting to register new user: {}", request.getUserName());
 
         List<String> errors = validateRegistrationRequest(request, userImage, userRole);
@@ -131,7 +137,7 @@ public class AuthenticationController {
 
         try {
             String fileName = fileService.uploadImage(path, userImage);
-            request.setUserImageUrl("/images/" + fileName);
+            request.setUserImageUrl(fileName);
             UserDto registeredUser = userService.registerUser(request, userRole);
             logger.info("Successfully registered user: {}", request.getUserName());
             return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
@@ -153,7 +159,7 @@ public class AuthenticationController {
         try {
             if (userImage != null && !userImage.isEmpty()) {
                 String fileName = fileService.uploadImage(path, userImage);
-                request.setUserImageUrl("/images/" + fileName);
+                request.setUserImageUrl(fileName);
             }
 
             UserDto updatedUser = userService.updateUser(request, userId, accountDetails);

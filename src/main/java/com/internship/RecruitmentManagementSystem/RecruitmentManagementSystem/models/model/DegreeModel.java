@@ -1,5 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.BaseEntity;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.Stream;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
@@ -11,7 +12,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class DegreeModel {
+public class DegreeModel extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

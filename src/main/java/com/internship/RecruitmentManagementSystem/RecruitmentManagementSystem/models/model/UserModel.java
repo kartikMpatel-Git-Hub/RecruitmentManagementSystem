@@ -57,10 +57,10 @@ public class UserModel extends BaseEntity implements UserDetails {
     )
     private Set<RoleModel> roles = new HashSet<>();
 
-    private boolean userAccountNonExpired = true;
-    private boolean userAccountNonLocked = true;
-    private boolean userCredentialsNonExpired = true;
-    private boolean userEnabled = true;
+    private Boolean userAccountNonExpired = true;
+    private Boolean userAccountNonLocked = true;
+    private Boolean userCredentialsNonExpired = true;
+    private Boolean userEnabled = true;
 
 
     @Override

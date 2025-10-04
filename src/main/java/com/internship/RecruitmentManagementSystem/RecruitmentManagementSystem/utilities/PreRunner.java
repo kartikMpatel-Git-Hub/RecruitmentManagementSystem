@@ -23,17 +23,15 @@ public class PreRunner implements CommandLineRunner {
             String[] roles = {
                     "ROLE_NORMAL","ROLE_ADMIN","ROLE_RECRUITER","ROLE_HR","ROLE_INTERVIEWER","ROLE_CANDIDATE"
             };
-            /*
-            for (String role : roles) {
-                if(!roleRepository.existsByRole(role)){
-                    RoleModel roleModel = new RoleModel();
-                    roleModel.setRoleId(AppConstant.getRoleId(role));
-                    roleModel.setRole(role);
-                    roleRepository.save(roleModel);
-                }
-            }
-            System.out.println("Roles added successfully!");
-            */
+//            for (String role : roles) {
+//                if(!roleRepository.existsByRole(role)){
+//                    RoleModel roleModel = new RoleModel();
+//                    roleModel.setRoleId(AppConstant.getRoleId(role));
+//                    roleModel.setRole(role);
+//                    roleRepository.save(roleModel);
+//                }
+//            }
+//            System.out.println("Roles added successfully!");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
