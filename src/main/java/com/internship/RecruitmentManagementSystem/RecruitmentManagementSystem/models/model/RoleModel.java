@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "tbl_role")
 @Getter
@@ -22,5 +25,8 @@ public class RoleModel extends BaseEntity{
     @NotEmpty(message = "Role Can't Be Empty !")
     @Size(min = 1,max = 30)
     private String role;
+
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<UserModel> users = new HashSet<>();
 
 }

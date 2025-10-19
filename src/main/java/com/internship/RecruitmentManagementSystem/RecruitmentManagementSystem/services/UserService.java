@@ -32,12 +32,14 @@ public class UserService implements UserServiceInterface {
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final CandidateService candidateService;
 
-    public UserService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, RoleRepository roleRepository) {
+    public UserService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, RoleRepository roleRepository, CandidateService candidateService) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
+        this.candidateService = candidateService;
     }
 
     @Override
@@ -52,11 +54,12 @@ public class UserService implements UserServiceInterface {
 
         user.setUserPassword(passwordEncoder.encode(userDto.getUserPassword()));
         RoleModel role = findRoleById(roleId, roleName);
-        user.getRoles().add(role);
+        user.setRole(role);
 
         UserModel savedUser = userRepository.save(user);
         logger.info("Successfully registered user with ID: {}", savedUser.getUserId());
-
+        if(roleName.equals("CANDIDATE"))
+            candidateService.register(savedUser);
         return convertor(savedUser);
     }
 
@@ -86,7 +89,6 @@ public class UserService implements UserServiceInterface {
     public void deleteUser(Integer userId) {
         logger.info("Deleting user with ID: {}", userId);
         UserModel user = findUserById(userId);
-        user.getRoles().clear();
         userRepository.delete(user);
         logger.info("Successfully deleted user with ID: {}", userId);
     }
@@ -96,7 +98,6 @@ public class UserService implements UserServiceInterface {
     public UserDto updateUser(UserDto userDto, Integer userId, AccountDetails accountDetails) {
         logger.info("Updating user with ID: {}", userId);
         UserModel user = findUserById(userId);
-
         updateUserFields(user, userDto);
         UserModel updatedUser = userRepository.save(user);
         logger.info("Successfully updated user with ID: {}", userId);

@@ -49,13 +49,9 @@ public class UserModel extends BaseEntity implements UserDetails {
     @Column(length = 500)
     private String userImageUrl;
 
-    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "tbl_user_roles",
-            joinColumns = @JoinColumn(name = "user_id",referencedColumnName = "userId"),
-            inverseJoinColumns = @JoinColumn(name = "role_id",referencedColumnName = "roleId")
-    )
-    private Set<RoleModel> roles = new HashSet<>();
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id",nullable = false)
+    private RoleModel role;
 
     private Boolean userAccountNonExpired = true;
     private Boolean userAccountNonLocked = true;
@@ -65,7 +61,9 @@ public class UserModel extends BaseEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream().map(role ->new SimpleGrantedAuthority(role.getRole())).toList();
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRole()));
+        return authorities;
     }
 
     @Override

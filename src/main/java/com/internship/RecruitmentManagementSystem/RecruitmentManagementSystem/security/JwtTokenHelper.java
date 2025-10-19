@@ -1,5 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.security;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
 import io.jsonwebtoken.Claims;
@@ -67,7 +68,7 @@ public class JwtTokenHelper {
     public String generateToken(UserDetails userDetails){
         Map<String,Object> claims = new HashMap<>();
         UserDto user = userService.getUserByUserName(userDetails.getUsername());
-        claims.put("userType",user.getRoles().stream().findFirst().get().getRole().toString());
+        claims.put("userType",user.getRole().getRole());
         claims.put("userEmail",user.getUserEmail());
         claims.put("userName",userDetails.getUsername());
         return doGenerateToken(claims,userDetails.getUsername());

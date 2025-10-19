@@ -8,7 +8,9 @@ import java.util.List;
 public interface SkillServiceInterface {
 
     public SkillDto addSkill(SkillDto skillDto);
+    public SkillModel addSkillModel(SkillDto skillDto);
     public SkillDto getSkill(Integer skillId);
+    SkillModel getSkillById(Integer skillId);
     public List<SkillDto> getSkills();
     public SkillDto updateSkill(SkillDto newSkill,Integer skillId);
     public void deleteSkill(Integer skillId);

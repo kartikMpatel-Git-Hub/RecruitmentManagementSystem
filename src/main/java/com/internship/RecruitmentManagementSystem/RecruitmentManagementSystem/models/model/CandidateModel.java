@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "tbl_candidate")
@@ -25,67 +29,64 @@ public class CandidateModel extends BaseEntity {
     @Column(nullable = false,length = 10)
     private Integer candidateId;
 
-    @Column(nullable = false,length = 30)
-    @NotEmpty(message = "Candidate First Name Can't Be Empty !")
+    @Column(nullable = true,length = 30)
     @Size(min = 3,max = 30)
     private String candidateFirstName;
 
-    @Column(nullable = false,length = 30)
-    @NotEmpty(message = "Candidate Middle Name Can't Be Empty !")
+    @Column(nullable = true,length = 30)
     @Size(min = 3,max = 30)
     private String candidateMiddleName;
 
-    @Column(nullable = false,length = 30)
-    @NotEmpty(message = "Candidate Last Name Can't Be Empty !")
+    @Column(nullable = true,length = 30)
     @Size(min = 3,max = 30)
     private String candidateLastName;
 
-    @Column(unique = true, nullable = false,length = 12)
-    @NotEmpty(message = "Candidate Phone Number Can't Be Empty !")
+    @Column(unique = true, nullable = true,length = 12)
     @Size(min = 10,max = 12)
     private String candidatePhoneNumber;
 
-    @Column(nullable = false,length = 6)
-    @NotEmpty(message = "Candidate Gender Can't Be Empty !")
+    @Column(nullable = true,length = 6)
     @Size(min = 4,max = 6)
     private String candidateGender;
 
-    @Column(nullable = false)
-    @NotNull(message = "Candidate Gender Can't Be Empty !")
+    @Column(nullable = true)
     private LocalDate candidateDateOfBirth;
 
-    @Column(nullable = false,length = 100)
-    @NotEmpty(message = "Candidate Address Can't Be Empty !")
+    @Column(nullable = true,length = 100)
     @Size(min = 3,max = 100)
     private String candidateAddress;
 
-    @Column(nullable = false,length = 30)
-    @NotEmpty(message = "Candidate City Can't Be Empty !")
+    @Column(nullable = true,length = 30)
     @Size(min = 3,max = 30)
     private String candidateCity;
 
-    @Column(nullable = false,length = 30)
-    @NotEmpty(message = "Candidate State Can't Be Empty !")
+    @Column(nullable = true,length = 30)
     @Size(min = 3,max = 30)
     private String candidateState;
 
-    @Column(nullable = false,length = 30)
-    @NotEmpty(message = "Candidate Country Can't Be Empty !")
+    @Column(nullable = true,length = 30)
     @Size(min = 3,max = 30)
     private String candidateCountry;
 
-    @Column(nullable = false,length = 10)
-    @NotEmpty(message = "Candidate Zip Code Can't Be Empty !")
+    @Column(nullable = true,length = 10)
     @Size(min = 5,max = 10)
     private String candidateZipCode;
 
-    @Column(nullable = false,length = 500)
+    @Column(nullable = true,length = 500)
     private String candidateResumeUrl;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer candidateTotalExperienceInYears;
 
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserModel user;
+
+    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "tbl_candidate_skills",
+            joinColumns = @JoinColumn(name = "candidate_id",referencedColumnName = "candidateId"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id",referencedColumnName = "skillId")
+    )
+    private List<SkillModel> skills = new ArrayList<>();
 }

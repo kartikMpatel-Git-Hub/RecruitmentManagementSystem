@@ -29,11 +29,24 @@ public class SkillService implements SkillServiceInterface {
     }
 
     @Override
+    public SkillModel addSkillModel(SkillDto skillDto) {
+        SkillModel skill = convertor(skillDto);
+        return skillRepository.save(skill);
+    }
+
+    @Override
     public SkillDto getSkill(Integer skillId) {
         SkillModel skill = skillRepository.findById(skillId).orElseThrow(
                 () -> new ResourceNotFoundException("Skill", "skillId", skillId.toString())
         );
         return convertor(skill);
+    }
+
+    @Override
+    public SkillModel getSkillById(Integer skillId) {
+        return skillRepository.findById(skillId).orElseThrow(
+                () -> new ResourceNotFoundException("Skill", "skillId", skillId.toString())
+        );
     }
 
     @Override
