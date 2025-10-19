@@ -28,7 +28,7 @@ public class UserDto {
 
     private String userImageUrl;
 
-    private Set<RoleModel> roles = new HashSet<>();
+    private RoleDto role;
 
     private LocalDateTime createdAt;
 

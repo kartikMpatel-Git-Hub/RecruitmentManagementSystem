@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.Arrays;
 
-@SpringBootApplication
+//@SpringBootApplication
 public class PreRunner implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
@@ -21,17 +21,17 @@ public class PreRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try {
             String[] roles = {
-                    "ROLE_NORMAL","ROLE_ADMIN","ROLE_RECRUITER","ROLE_HR","ROLE_INTERVIEWER","ROLE_CANDIDATE"
+                    "NORMAL","ADMIN","RECRUITER","HR","INTERVIEWER","CANDIDATE"
             };
-//            for (String role : roles) {
-//                if(!roleRepository.existsByRole(role)){
-//                    RoleModel roleModel = new RoleModel();
-//                    roleModel.setRoleId(AppConstant.getRoleId(role));
-//                    roleModel.setRole(role);
-//                    roleRepository.save(roleModel);
-//                }
-//            }
-//            System.out.println("Roles added successfully!");
+            for (String role : roles) {
+                if(!roleRepository.existsByRole(role)){
+                    RoleModel roleModel = new RoleModel();
+                    roleModel.setRoleId(AppConstant.getRoleId(role));
+                    roleModel.setRole(role);
+                    roleRepository.save(roleModel);
+                }
+            }
+            System.out.println("Roles added successfully!");
         } catch (Exception ex) {
             ex.printStackTrace();
         }

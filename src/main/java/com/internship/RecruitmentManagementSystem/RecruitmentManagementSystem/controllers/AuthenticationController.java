@@ -3,15 +3,17 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.c
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.CredentialException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.CandidateModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.requests.JwtAuthenticationRequest;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.JwtAuthenticationResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.security.JwtTokenHelper;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.CandidateService;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.FileService;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,20 +54,19 @@ public class AuthenticationController {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final FileService fileService;
+    private final CandidateService candidateService;
 
     @Value("${project.image}")
     private String path;
 
-    public AuthenticationController(JwtTokenHelper jwtTokenHelper,
-                                  UserDetailsService userDetailsService,
-                                  AuthenticationManager authenticationManager,
-                                  UserService userService,
-                                  FileService fileService) {
+
+    public AuthenticationController(JwtTokenHelper jwtTokenHelper, UserDetailsService userDetailsService, AuthenticationManager authenticationManager, UserService userService, FileService fileService, CandidateService candidateService) {
         this.jwtTokenHelper = jwtTokenHelper;
         this.userDetailsService = userDetailsService;
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.fileService = fileService;
+        this.candidateService = candidateService;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -101,17 +102,21 @@ public class AuthenticationController {
         logger.info("Successfully generated token for user: {}", request.getUserName());
         return new ResponseEntity<>(new JwtAuthenticationResponse(
                 token,
-                user.getRoles().stream().findFirst().get().getRole()
+                user.getRole().toString()
         ), HttpStatus.OK);
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<UserDto> getProfile() {
+    public ResponseEntity<?> getProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = authentication.getName();
         logger.info("Fetching profile for user: {}", userName);
 
         UserDto user = userService.getUserByUserName(userName);
+        if(user.getRole().getRole().equals("CANDIDATE")){
+            CandidateDto candidate = candidateService.getCandidateByUserId(user.getUserId());
+            return new ResponseEntity<>(candidate, HttpStatus.OK);
+        }
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
@@ -122,6 +127,7 @@ public class AuthenticationController {
         return new ResponseEntity<>(users,HttpStatus.OK);
     }
 
+    @Transactional
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid UserDto request,
                                              @RequestPart(value = "image",required = true) MultipartFile userImage,

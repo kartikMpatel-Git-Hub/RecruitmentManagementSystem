@@ -16,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/skill")
 @CrossOrigin(origins = "http://localhost:5173")
-@PreAuthorize("hasRole('ADMIN')")
 public class SkillController {
     private static final Logger logger = LoggerFactory.getLogger(SkillController.class);
 
@@ -26,6 +25,7 @@ public class SkillController {
         this.skillService = skillService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','HR','RECRUITER')")
     @PostMapping("/")
     public ResponseEntity<?> createNewSkill(@RequestBody @Valid SkillDto skillDto){
         logger.info("Attempting To Create New Skill");
@@ -66,6 +66,7 @@ public class SkillController {
 
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','HR','RECRUITER')")
     @DeleteMapping("/{skillId}")
     public ResponseEntity<?> deleteSkill(@PathVariable Integer skillId){
         logger.info("Deleting Skill With Id : {}", skillId);
@@ -74,6 +75,7 @@ public class SkillController {
         return new ResponseEntity<>("Deleted Successfully !",HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','HR','RECRUITER')")
     @PutMapping("/{skillId}")
     public ResponseEntity<?> updateSkill(@PathVariable Integer skillId,@RequestBody @Valid SkillDto skillDto){
         logger.info("Updating Skill With Id : {}", skillId);

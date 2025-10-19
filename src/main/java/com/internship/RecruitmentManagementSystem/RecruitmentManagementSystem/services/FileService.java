@@ -42,7 +42,20 @@ public class FileService implements FileServiceInterface {
         String imageUrl;
         try {
             File localFile = new File(filePath);
-            Map uploadResult = cloudinary.uploader().upload(localFile, ObjectUtils.asMap("resource_type", "auto"));
+            String extension = file.getOriginalFilename()
+                    .substring(file.getOriginalFilename().lastIndexOf('.') + 1)
+                    .toLowerCase();
+            Map uploadResult;
+            if (extension.equals("pdf") || extension.equals("doc") || extension.equals("docx")) {
+                uploadResult = cloudinary.uploader().upload(localFile, ObjectUtils.asMap(
+                        "resource_type", "raw",
+                        "folder", "resumes",       // optional: organize files
+                        "overwrite", true,
+                        "access_mode", "public"
+                ));
+            } else {
+                uploadResult = cloudinary.uploader().upload(localFile, ObjectUtils.asMap("resource_type", "image"));
+            }
             imageUrl = uploadResult.get("secure_url").toString();
 
             if (localFile.delete()) {
