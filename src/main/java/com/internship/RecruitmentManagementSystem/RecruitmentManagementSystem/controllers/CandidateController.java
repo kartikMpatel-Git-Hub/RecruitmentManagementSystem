@@ -4,12 +4,10 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.CandidateRegistrationResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.CandidateService;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.FileService;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/candidate")
+@RequestMapping("/candidates")
 @CrossOrigin(origins = "http://localhost:5173")
 public class CandidateController {
 
@@ -63,23 +61,33 @@ public class CandidateController {
     public ResponseEntity<?> deleteCandidate(@PathVariable Integer candidateId) {
         Boolean isDeleted = candidateService.deleteCandidate(candidateId);
         if (isDeleted) {
-            return new ResponseEntity<>("Delete Candidate !", HttpStatus.OK);
+            return new ResponseEntity<>(new ApiResponse(200,"Delete Successfully !",true), HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Failed TO Delete Candidate With Id : " + candidateId, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(new ApiResponse(500,"Error While Deleting !",false), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @GetMapping(value = "/")
+    @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
-    public ResponseEntity<?> getCandidates(){
-        List<CandidateDto> candidates = candidateService.getAllCandidates();
-        return new ResponseEntity<>(candidates, HttpStatus.OK);
+    public ResponseEntity<PaginatedResponse<CandidateDto>> getCandidates(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "candidateId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ){
+        PaginatedResponse<CandidateDto> response = candidateService.getAllCandidates(page, size, sortBy, sortDir);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping(value = "/{candidateId}")
     public ResponseEntity<?> getCandidate(@PathVariable Integer candidateId){
         CandidateDto candidate = candidateService.getCandidate(candidateId);
         return new ResponseEntity<>(candidate,HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/user/{userId}")
+    public ResponseEntity<?> getCandidateByUserId(@PathVariable Integer userId){
+        return new ResponseEntity<>(candidateService.getCandidateByUserId(userId),HttpStatus.OK);
     }
 
     private void saveFiles( MultipartFile resume, CandidateDto candidateRegistrationDto){

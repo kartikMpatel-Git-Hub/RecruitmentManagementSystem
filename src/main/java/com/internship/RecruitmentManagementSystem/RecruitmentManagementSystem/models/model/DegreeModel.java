@@ -7,7 +7,11 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
 
 @Entity
-@Table(name = "tbl_degree")
+@Table(name = "tbl_degree",indexes = {
+        @Index(name = "idx_stream",columnList = "stream"),
+        @Index(name = "idx_created_at", columnList = "createdAt"),
+        @Index(name = "idx_updated_at", columnList = "updatedAt")
+})
 @Getter
 @Setter
 @AllArgsConstructor

@@ -4,6 +4,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.CandidateRegistrationResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
 import java.util.List;
 
@@ -15,7 +16,8 @@ public interface CandidateServiceInterface {
 
     public Boolean deleteCandidate(Integer candidateId);
 
-    List<CandidateDto> getAllCandidates();
+    public PaginatedResponse<CandidateDto> getAllCandidates(int page, int size, String sortBy, String sortDir);
+//    List<CandidateDto> getAllCandidates();
 
     CandidateDto getCandidate(Integer candidateId);
 

@@ -11,11 +11,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import javax.security.auth.login.CredentialException;
 import java.sql.SQLIntegrityConstraintViolationException;
@@ -144,6 +146,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> FailedProcessExceptionHandler(FailedProcessException ex) {
         return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
     }
+//    IllegalArgumentException
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> IllegalArgumentExceptionHandler(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+    }
+//  MaxUploadSizeExceededException
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<?> MaxUploadSizeExceededExceptionHandler(MaxUploadSizeExceededException ex) {
+        return new ResponseEntity<>("Image Size Limit Reached !",HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> HttpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex) {
@@ -165,4 +177,9 @@ public class GlobalExceptionHandler {
         );
     }
 
+//    UnexpectedRollbackException
+//    @ExceptionHandler(UnexpectedRollbackException.class)
+//    public ResponseEntity<?> UnexpectedRollbackExceptionHandler(UnexpectedRollbackException ex) {
+//        return new ResponseEntity<>("Something Went Wrong !",HttpStatus.BAD_REQUEST);
+//    }
 }

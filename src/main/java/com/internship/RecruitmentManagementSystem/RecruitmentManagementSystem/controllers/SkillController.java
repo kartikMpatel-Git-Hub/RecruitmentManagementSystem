@@ -2,6 +2,8 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.c
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.SkillDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.SkillModel;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.SkillService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/skill")
+@RequestMapping("/skills")
 @CrossOrigin(origins = "http://localhost:5173")
 public class SkillController {
     private static final Logger logger = LoggerFactory.getLogger(SkillController.class);
@@ -39,7 +41,7 @@ public class SkillController {
             return new ResponseEntity<>(skill, HttpStatus.CREATED);
         }else{
             logger.error("Skill Already Exists");
-            return ResponseEntity.badRequest().body("Skill Already Exists");
+            return ResponseEntity.badRequest().body(new ApiResponse(200,"Error While Adding Skill!",true));
         }
     }
 
@@ -53,16 +55,15 @@ public class SkillController {
 
     }
 
-    @GetMapping("/")
-    public ResponseEntity<List<SkillDto>> getSkills(){
+    @GetMapping
+    public ResponseEntity<PaginatedResponse<SkillDto>> getSkills(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "30") Integer size,
+            @RequestParam(defaultValue = "skillId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ){
 
-        logger.info("Fetching Skills ");
-
-        List<SkillDto> skills = skillService.getSkills();
-
-        logger.info("Fetched All Skills ");
-
-        return new ResponseEntity<>(skills,HttpStatus.OK);
+        return ResponseEntity.ok(skillService.getSkills(page, size, sortBy, sortDir));
 
     }
 
@@ -72,7 +73,7 @@ public class SkillController {
         logger.info("Deleting Skill With Id : {}", skillId);
         skillService.deleteSkill(skillId);
         logger.info("Deleted Skill With Id : {}", skillId);
-        return new ResponseEntity<>("Deleted Successfully !",HttpStatus.OK);
+        return new ResponseEntity<>(new ApiResponse(200,"Delete Successfully !",true),HttpStatus.OK);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','HR','RECRUITER')")

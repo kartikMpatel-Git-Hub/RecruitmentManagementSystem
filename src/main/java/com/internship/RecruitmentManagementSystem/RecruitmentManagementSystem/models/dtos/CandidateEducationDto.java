@@ -15,8 +15,13 @@ import lombok.Setter;
 public class CandidateEducationDto {
 
     Integer candidateEducationId;
-    CandidateModel candidate;
-    UniversityModel university;
-    DegreeModel degree;
+    Integer candidate;
+    String candidateName;
+    Integer university;
+    String universityName;
+    Integer degree;
+    String degreeName;
+    Double percentage;
+    Integer passingYear;
 
 }
