@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.DegreeDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
 import java.util.List;
 
@@ -14,5 +15,5 @@ public interface DegreeServiceInterface {
 
     public DegreeDto updateDegree(Integer degreeId,DegreeDto degreeDto);
 
-    public List<DegreeDto> getAllDegrees();
+    public PaginatedResponse<DegreeDto> getAllDegrees(int page, int size, String sortBy, String sortDir);
 }

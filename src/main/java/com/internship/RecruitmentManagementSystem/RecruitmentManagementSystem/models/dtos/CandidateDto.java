@@ -37,7 +37,7 @@ public class CandidateDto {
     private String candidateResumeUrl;
     private Integer candidateTotalExperienceInYears;
 
-    private List<SkillDto> candidateSkills;
+//    private List<SkillDto> candidateSkills;
 }
 
 /*

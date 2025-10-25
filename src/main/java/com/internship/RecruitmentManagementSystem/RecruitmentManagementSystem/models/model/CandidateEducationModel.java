@@ -2,21 +2,31 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.m
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.*;
+
+import java.io.Serializable;
 
 @Entity
-@Table(name = "tbl_candidate_education")
+@Table(name = "tbl_candidate_education",indexes = {
+        @Index(name = "idx_candidate_id", columnList = "candidate_id"),
+        @Index(name = "idx_university_id", columnList = "university_id"),
+        @Index(name = "idx_degree_id", columnList = "degree_id"),
+        @Index(name = "idx_passing_year", columnList = "passingYear"),
+        @Index(name = "idx_candidate_degree", columnList = "candidate_id, degree_id"),
+        @Index(name = "idx_created_at", columnList = "createdAt"),
+        @Index(name = "idx_updated_at", columnList = "updatedAt")
+})
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class CandidateEducationModel extends BaseEntity {
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer candidateEducationId;
+    private Integer candidateEducationId;
 
     @ManyToOne
     @JoinColumn(name = "candidate_id", nullable = false)
@@ -30,4 +40,7 @@ public class CandidateEducationModel extends BaseEntity {
     @JoinColumn(name = "degree_id", nullable = false)
     DegreeModel degree;
 
+    Double percentage;
+
+    Integer passingYear;
 }

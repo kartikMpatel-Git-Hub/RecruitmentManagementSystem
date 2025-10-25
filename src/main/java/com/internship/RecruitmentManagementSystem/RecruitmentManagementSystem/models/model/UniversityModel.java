@@ -9,7 +9,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tbl_university")
+@Table(name = "tbl_university",indexes = {
+        @Index(name = "idx_created_at", columnList = "createdAt"),
+        @Index(name = "idx_updated_at", columnList = "updatedAt")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,7 +23,7 @@ public class UniversityModel extends BaseEntity {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Integer universityId;
 
-    @Column(nullable = false,length = 30)
-    @Size(min = 3,max = 30)
+    @Column(nullable = false,length = 50)
+    @Size(min = 3,max = 50)
     private String university;
 }

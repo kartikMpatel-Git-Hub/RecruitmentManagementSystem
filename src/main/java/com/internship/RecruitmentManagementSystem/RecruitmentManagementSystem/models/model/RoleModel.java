@@ -10,11 +10,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "tbl_role")
+@Table(name = "tbl_role",indexes = {
+        @Index(name = "idx_role", columnList = "role"),
+        @Index(name = "idx_created_at", columnList = "createdAt"),
+        @Index(name = "idx_updated_at", columnList = "updatedAt")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class RoleModel extends BaseEntity{
 
     @Id

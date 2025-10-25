@@ -1,17 +1,30 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.SkillDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.SkillModel;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.SkillRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.SkillServiceInterface;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class SkillService implements SkillServiceInterface {
+
+    private static final Logger logger = LoggerFactory.getLogger(SkillService.class);
 
     private final SkillRepository skillRepository;
     private final ModelMapper modelMapper;
@@ -22,66 +35,135 @@ public class SkillService implements SkillServiceInterface {
     }
 
     @Override
+    @CacheEvict(value = "skillData", allEntries = true)
     public SkillDto addSkill(SkillDto skillDto) {
-        SkillModel skill = convertor(skillDto);
-        SkillModel savedSkill = skillRepository.save(skill);
+        logger.info("Attempting to add new skill: {}", skillDto.getSkill());
+
+        if (skillRepository.existsBySkill(skillDto.getSkill())) {
+            logger.error("Skill '{}' already exists!", skillDto.getSkill());
+            throw new ResourceAlreadyExistsException("Skill already exists");
+        }
+
+        SkillModel savedSkill = skillRepository.save(convertor(skillDto));
+        logger.info("Successfully added skill: {} (ID: {})", savedSkill.getSkill(), savedSkill.getSkillId());
+
         return convertor(savedSkill);
     }
 
     @Override
     public SkillModel addSkillModel(SkillDto skillDto) {
-        SkillModel skill = convertor(skillDto);
-        return skillRepository.save(skill);
+        return convertor(skillDto);
     }
 
     @Override
+    @Cacheable(value = "userSkill",key = "'id_'+#skillId")
     public SkillDto getSkill(Integer skillId) {
-        SkillModel skill = skillRepository.findById(skillId).orElseThrow(
-                () -> new ResourceNotFoundException("Skill", "skillId", skillId.toString())
-        );
+        logger.info("Fetching skill with ID: {}", skillId);
+
+        SkillModel skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> {
+                    logger.error("Skill not found with ID: {}", skillId);
+                    return new ResourceNotFoundException("Skill", "skillId", skillId.toString());
+                });
+
+        logger.info("Skill found: {} (ID: {})", skill.getSkill(), skill.getSkillId());
         return convertor(skill);
     }
 
     @Override
     public SkillModel getSkillById(Integer skillId) {
-        return skillRepository.findById(skillId).orElseThrow(
-                () -> new ResourceNotFoundException("Skill", "skillId", skillId.toString())
-        );
+        logger.info("Fetching SkillModel by ID: {}", skillId);
+
+        SkillModel skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> {
+                    logger.error("SkillModel not found with ID: {}", skillId);
+                    return new ResourceNotFoundException("Skill", "skillId", skillId.toString());
+                });
+
+        logger.info("SkillModel found: {} (ID: {})", skill.getSkill(), skill.getSkillId());
+        return skill;
     }
 
     @Override
-    public List<SkillDto> getSkills() {
+    @Cacheable(value = "skillData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<SkillDto> getSkills(Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching paginated skills - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
 
-        List<SkillModel> skills = skillRepository.findAll();
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
 
-        return skills.stream().map(this::convertor).toList();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<SkillModel> pageResponse = skillRepository.findAll(pageable);
+
+        PaginatedResponse<SkillDto> response = new PaginatedResponse<>();
+        response.setData(pageResponse.getContent().stream().map(this::convertor).toList());
+        response.setCurrentPage(pageResponse.getNumber());
+        response.setLast(pageResponse.isLast());
+        response.setPageSize(pageResponse.getSize());
+        response.setTotalItems(pageResponse.getTotalElements());
+        response.setTotalPages(pageResponse.getTotalPages());
+
+        logger.info("Successfully fetched {} skills (Page {}/{})", response.getData().size(), response.getCurrentPage() + 1, response.getTotalPages());
+        return response;
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "skillData",allEntries = true),
+            @CacheEvict(value = "userSkill",allEntries = true)
+    })
     public SkillDto updateSkill(SkillDto newSkill, Integer skillId) {
+        logger.info("Updating skill with ID: {}", skillId);
 
-        SkillModel oldSkill = skillRepository.findById(skillId).orElseThrow(
-                () -> new ResourceNotFoundException("Skill", "skillId", skillId.toString())
-        );
+        SkillModel existingSkill = skillRepository.findById(skillId)
+                .orElseThrow(() -> {
+                    logger.error("Skill not found for update, ID: {}", skillId);
+                    return new ResourceNotFoundException("Skill", "skillId", skillId.toString());
+                });
 
-        oldSkill.setSkill(newSkill.getSkill());
-        SkillModel updatedSkill = skillRepository.save(oldSkill);
+        if (newSkill.getSkill() != null && !newSkill.getSkill().trim().isEmpty()) {
+            logger.debug("Updating skill name from '{}' to '{}'", existingSkill.getSkill(), newSkill.getSkill());
+            existingSkill.setSkill(newSkill.getSkill());
+        }
+
+        SkillModel updatedSkill = skillRepository.save(existingSkill);
+        logger.info("Skill updated successfully: {} (ID: {})", updatedSkill.getSkill(), updatedSkill.getSkillId());
 
         return convertor(updatedSkill);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "skillData",allEntries = true),
+            @CacheEvict(value = "userSkill",allEntries = true)
+    })
     public void deleteSkill(Integer skillId) {
-        SkillModel oldSkill = skillRepository.findById(skillId).orElseThrow(
-                () -> new ResourceNotFoundException("Skill", "skillId", skillId.toString())
-        );
+        logger.info("Deleting skill with ID: {}", skillId);
 
-        skillRepository.delete(oldSkill);
+        SkillModel skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> {
+                    logger.error("Skill not found for deletion, ID: {}", skillId);
+                    return new ResourceNotFoundException("Skill", "skillId", skillId.toString());
+                });
+
+        skillRepository.delete(skill);
+        logger.info("Skill successfully deleted with ID: {}", skillId);
     }
 
     @Override
-    public SkillModel getBySkill(String skill) {
-        return skillRepository.findBySkill(skill).orElse(null);
+    @Cacheable(value = "userSkill",key = "'skillName_'+#skillName")
+    public SkillModel getBySkill(String skillName) {
+        logger.info("Searching for skill by name: {}", skillName);
+
+        SkillModel skill = skillRepository.findBySkill(skillName).orElse(null);
+        if (skill == null) {
+            logger.warn("No skill found with name: {}", skillName);
+        } else {
+            logger.info("Skill found: {} (ID: {})", skill.getSkill(), skill.getSkillId());
+        }
+
+        return skill;
     }
 
     private SkillDto convertor(SkillModel skill) {

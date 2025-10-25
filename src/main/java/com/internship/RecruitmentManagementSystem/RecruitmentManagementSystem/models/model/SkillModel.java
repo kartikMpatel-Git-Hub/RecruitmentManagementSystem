@@ -10,7 +10,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tbl_skill")
+@Table(name = "tbl_skill",indexes = {
+        @Index(name = "idx_created_at", columnList = "createdAt"),
+        @Index(name = "idx_updated_at", columnList = "updatedAt")
+})
 @Getter
 @Setter
 @NoArgsConstructor

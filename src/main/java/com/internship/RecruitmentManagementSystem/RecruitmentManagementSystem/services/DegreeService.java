@@ -5,11 +5,19 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.DegreeDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.DegreeModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.DegreeRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.DegreeServiceInterface;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,87 +42,126 @@ public class DegreeService implements DegreeServiceInterface {
 
     @Override
     @Transactional
+    @CacheEvict(value = "degreeData", allEntries = true)
     public DegreeDto addDegree(DegreeDto degreeDto) {
+        logger.info("Attempting to add new degree: {}", degreeDto.getDegree());
         validateDegreeDto(degreeDto);
 
-        logger.info("Adding new degree: {}", degreeDto.getDegree());
         DegreeModel savedDegreeModel = degreeRepository.save(convertor(degreeDto));
-        logger.info("Successfully added degree with ID: {}", savedDegreeModel.getDegreeId());
-
+        logger.info("Successfully added degree with ID: {} and Name: {}", savedDegreeModel.getDegreeId(), savedDegreeModel.getDegree());
         return convertor(savedDegreeModel);
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "degreeData", allEntries = true),
+            @CacheEvict(value = "userData", key = "'id_' + #degreeId")
+    })
     public void deleteDegree(Integer degreeId) {
+        logger.info("Attempting to delete degree with ID: {}", degreeId);
         validateDegreeId(degreeId);
 
-        logger.info("Deleting degree with ID: {}", degreeId);
-        findDegreeById(degreeId);
-        degreeRepository.deleteById(degreeId);
-        logger.info("Successfully deleted degree with ID: {}", degreeId);
+        DegreeModel degree = findDegreeById(degreeId);
+        degreeRepository.delete(degree);
+        logger.info("Successfully deleted degree with ID: {} and Name: {}", degreeId, degree.getDegree());
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "degreeData", allEntries = true),
+            @CacheEvict(value = "userData", key = "'id_' + #degreeId")
+    })
     public DegreeDto updateDegree(Integer degreeId, DegreeDto newDegree) {
+        logger.info("Attempting to update degree with ID: {}", degreeId);
         validateDegreeId(degreeId);
 
-        logger.info("Updating degree with ID: {}", degreeId);
         DegreeModel degree = findDegreeById(degreeId);
-
         updateDegreeFields(degree, newDegree);
-        DegreeModel updatedDegree = degreeRepository.save(degree);
-        logger.info("Successfully updated degree with ID: {}", degreeId);
 
+        DegreeModel updatedDegree = degreeRepository.save(degree);
+        logger.info("Successfully updated degree with ID: {}. New Degree Name: {}", degreeId, updatedDegree.getDegree());
         return convertor(updatedDegree);
     }
 
     @Override
+    @Cacheable(value = "userDegree",key = "'id_' + #degreeId")
     public DegreeDto getDegree(Integer degreeId) {
+        logger.info("Fetching degree with ID: {}", degreeId);
         validateDegreeId(degreeId);
-        return convertor(findDegreeById(degreeId));
+
+        DegreeModel degree = findDegreeById(degreeId);
+        logger.info("Successfully fetched degree with ID: {} and Name: {}", degreeId, degree.getDegree());
+        return convertor(degree);
     }
 
     @Override
-    public List<DegreeDto> getAllDegrees() {
-        logger.info("Fetching all degrees");
-        List<DegreeModel> degreeModels = degreeRepository.findAll();
-        return degreeModels.stream().map(this::convertor).toList();
+    @Cacheable(value = "degreeData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<DegreeDto> getAllDegrees(int page, int size, String sortBy, String sortDir) {
+        logger.info("Fetching all degrees - Page: {}, Size: {}, SortBy: {}, SortDir: {}", page, size, sortBy, sortDir);
+
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<DegreeModel> pageResponse = degreeRepository.findAll(pageable);
+
+        PaginatedResponse<DegreeDto> response = new PaginatedResponse<>();
+        response.setData(pageResponse.stream().map(this::convertor).toList());
+        response.setCurrentPage(pageResponse.getNumber());
+        response.setLast(pageResponse.isLast());
+        response.setPageSize(pageResponse.getSize());
+        response.setTotalItems(pageResponse.getTotalElements());
+        response.setTotalPages(pageResponse.getTotalPages());
+
+        logger.info("Fetched {} degrees (Page {}/{})", response.getData().size(), response.getCurrentPage() + 1, response.getTotalPages());
+        return response;
     }
 
     private void validateDegreeDto(DegreeDto degreeDto) {
         List<String> errors = new ArrayList<>();
-
         if (degreeDto.getDegree() == null || degreeDto.getDegree().trim().isEmpty()) {
             errors.add(DEGREE_NOT_FOUND);
+            logger.error("Degree name missing");
         }
         if (degreeDto.getStream() == null || degreeDto.getStream().toString().trim().isEmpty()) {
             errors.add(STREAM_NOT_FOUND);
+            logger.error("Stream missing");
         }
 
         if (!errors.isEmpty()) {
-            throw new ErrorResponseException(INSUFFICIENT_DATA,
-                    new ErrorResponse(400, INSUFFICIENT_DATA, errors, false));
+            logger.error("Degree DTO validation failed: {}", errors);
+            throw new ErrorResponseException(INSUFFICIENT_DATA, new ErrorResponse(400, INSUFFICIENT_DATA, errors, false));
         }
+
+        logger.debug("Degree DTO validated successfully: {}", degreeDto);
     }
 
     private void validateDegreeId(Integer degreeId) {
         if (degreeId == null || degreeId <= 0) {
+            logger.error("Invalid degree ID: {}", degreeId);
             throw new IllegalArgumentException("Invalid degree ID");
         }
+        logger.debug("Degree ID validated: {}", degreeId);
     }
 
     private DegreeModel findDegreeById(Integer degreeId) {
         return degreeRepository.findById(degreeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Degree", "ID", degreeId.toString()));
+                .orElseThrow(() -> {
+                    logger.error("Degree not found with ID: {}", degreeId);
+                    return new ResourceNotFoundException("Degree", "ID", degreeId.toString());
+                });
     }
 
     private void updateDegreeFields(DegreeModel degree, DegreeDto newDegree) {
         if (newDegree.getDegree() != null && !newDegree.getDegree().trim().isEmpty()) {
+            logger.debug("Updating degree name from '{}' to '{}'", degree.getDegree(), newDegree.getDegree());
             degree.setDegree(newDegree.getDegree());
         }
         if (newDegree.getStream() != null && !newDegree.getStream().toString().trim().isEmpty()) {
+            logger.debug("Updating degree stream from '{}' to '{}'", degree.getStream(), newDegree.getStream());
             degree.setStream(newDegree.getStream());
         }
     }

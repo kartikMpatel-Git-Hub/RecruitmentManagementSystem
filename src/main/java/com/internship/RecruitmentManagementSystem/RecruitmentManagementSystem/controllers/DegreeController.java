@@ -4,6 +4,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiObjectResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiObjectsResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.DegreeService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -15,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/degree")
+@RequestMapping("/degrees")
 @CrossOrigin(origins = "http://localhost:5173")
-@PreAuthorize("hasRole('ADMIN')")
+//@PreAuthorize("hasRole('ADMIN')")
 public class DegreeController {
 
     private static final Logger logger = LoggerFactory.getLogger(DegreeController.class);
@@ -34,6 +35,7 @@ public class DegreeController {
     }
 
     @PostMapping("/")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> addDegree(@RequestBody @Valid DegreeDto degreeDto) {
         logger.info("Adding new degree: {}", degreeDto.getDegree());
         DegreeDto responseDegree = degreeService.addDegree(degreeDto);
@@ -51,27 +53,31 @@ public class DegreeController {
         return new ResponseEntity<>(degree,HttpStatus.OK);
     }
 
-    @GetMapping("/")
-    public ResponseEntity<?> getDegrees(){
-        logger.info("Getting All degree ");
-        List<DegreeDto> degree = degreeService.getAllDegrees();
-        logger.info("Get All Degree");
+    @GetMapping
+    public ResponseEntity<PaginatedResponse<DegreeDto>> getDegrees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "degreeId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ){
         return new ResponseEntity<>(
-                degree,
+                degreeService.getAllDegrees(page,size,sortBy,sortDir),
                 HttpStatus.OK);
     }
 
     @DeleteMapping("/{degreeId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteDegrees(@PathVariable Integer degreeId){
         logger.info("Deleting degree With Id : {}", degreeId);
         degreeService.deleteDegree(degreeId);
         logger.info("Deleted degree With Id : {}", degreeId);
         return new ResponseEntity<>(
-                "Degree Deleted Successfully !",
+                new ApiResponse(200,"Delete Successfully !",true),
                 HttpStatus.OK);
     }
 
     @PutMapping("/{degreeId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateDegrees(@PathVariable Integer degreeId,@RequestBody @Valid DegreeDto degreeDto){
         logger.info("Updating degree With Id : {}", degreeId);
         DegreeDto updatedDegree = degreeService.updateDegree(degreeId,degreeDto);

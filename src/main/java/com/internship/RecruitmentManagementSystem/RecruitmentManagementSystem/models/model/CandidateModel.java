@@ -2,8 +2,6 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.m
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.BaseEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,12 +10,14 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
-@Table(name = "tbl_candidate")
+@Table(name = "tbl_candidate",indexes = {
+        @Index(name = "idx_user_id",columnList = "user_id"),
+        @Index(name = "idx_created_at", columnList = "createdAt"),
+        @Index(name = "idx_updated_at", columnList = "updatedAt")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -82,11 +82,11 @@ public class CandidateModel extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserModel user;
 
-    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "tbl_candidate_skills",
-            joinColumns = @JoinColumn(name = "candidate_id",referencedColumnName = "candidateId"),
-            inverseJoinColumns = @JoinColumn(name = "skill_id",referencedColumnName = "skillId")
-    )
-    private List<SkillModel> skills = new ArrayList<>();
+//    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+//    @JoinTable(
+//            name = "tbl_candidate_skills",
+//            joinColumns = @JoinColumn(name = "candidate_id",referencedColumnName = "candidateId"),
+//            inverseJoinColumns = @JoinColumn(name = "skill_id",referencedColumnName = "skillId")
+//    )
+//    private List<SkillModel> skills = new ArrayList<>();
 }
