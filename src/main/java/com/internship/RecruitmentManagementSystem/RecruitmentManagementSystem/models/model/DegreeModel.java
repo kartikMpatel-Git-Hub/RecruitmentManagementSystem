@@ -4,7 +4,9 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.co
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.Stream;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "tbl_degree",indexes = {
@@ -16,14 +18,16 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class DegreeModel extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer degreeId;
 
-    @Column(unique = true,length = 50)
+    @Column(unique = true,length = 70)
     @NotEmpty(message = "Degree Can't Be Empty")
+    @Size(min = 1,max = 70)
     private String degree;
 
     @Enumerated(EnumType.STRING)

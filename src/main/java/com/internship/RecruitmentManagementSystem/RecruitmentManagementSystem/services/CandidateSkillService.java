@@ -1,7 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateEducationDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateSkillDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;

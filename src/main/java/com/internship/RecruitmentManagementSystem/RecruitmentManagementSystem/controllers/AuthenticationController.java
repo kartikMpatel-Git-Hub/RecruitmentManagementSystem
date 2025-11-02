@@ -56,8 +56,9 @@ public class AuthenticationController {
     @Value("${project.image}")
     private String path;
 
-
-    public AuthenticationController(JwtTokenHelper jwtTokenHelper, UserDetailsService userDetailsService, AuthenticationManager authenticationManager, UserService userService, FileService fileService) {
+    public AuthenticationController(JwtTokenHelper jwtTokenHelper, UserDetailsService userDetailsService,
+                                    AuthenticationManager authenticationManager, UserService userService,
+                                    FileService fileService) {
         this.jwtTokenHelper = jwtTokenHelper;
         this.userDetailsService = userDetailsService;
         this.authenticationManager = authenticationManager;
@@ -67,64 +68,76 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<?> createToken(@RequestBody JwtAuthenticationRequest request) {
-        logger.info("Login attempt for user: {}", request.getUserName());
+        logger.info("Login API called for username: {}", request.getUserName());
 
         List<String> errors = validateLoginRequest(request);
         if (!errors.isEmpty()) {
-            logger.warn("Login validation failed for user: {}", request.getUserName());
+            logger.warn("Login validation failed for user: {} | Errors: {}", request.getUserName(), errors);
             return createErrorResponse(errors);
         }
 
+        logger.debug("Attempting authentication for user: {}", request.getUserName());
         authenticate(request.getUserName(), request.getPassword());
+
+        logger.debug("Loading UserDetails for username: {}", request.getUserName());
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUserName());
         UserDto user = userService.getUserByUserName(request.getUserName());
+
+        logger.debug("Generating JWT token for user: {}", request.getUserName());
         String token = jwtTokenHelper.generateToken(userDetails);
 
-        logger.info("Successfully generated token for user: {}", request.getUserName());
+        logger.info("Login successful for user: {}", request.getUserName());
         return new ResponseEntity<>(new JwtAuthenticationResponse(
-                token,
-                user.getRole().toString()
+                token, user.getRole().toString()
         ), HttpStatus.OK);
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<?> changePassword(
-            @AuthenticationPrincipal UserModel user,
-            @RequestBody UserPasswordDto request) {
-        logger.info("Password Change attempt for user {}",user.getUsername());
-        UserDto changedPasswordUser = userService.changePassword(user,request.getCurrentPassword(),request.getNewPassword());
+    public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserModel user,
+                                            @RequestBody UserPasswordDto request) {
+        logger.info("Password change requested by user: {}", user.getUsername());
+        logger.debug("Validating old and new password for user: {}", user.getUsername());
+        UserDto changedPasswordUser = userService.changePassword(user, request.getCurrentPassword(), request.getNewPassword());
+        logger.info("Password successfully changed for user: {}", user.getUsername());
         return new ResponseEntity<>(changedPasswordUser, HttpStatus.OK);
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid UserDto request,
-                                             @RequestPart(value = "image",required = true) MultipartFile userImage,
-                                           @RequestPart(value = "role", required = true) String userRole) {
-        logger.info("Attempting to register new user: {}", request.getUserName());
+                                             @RequestPart(value = "image", required = true) MultipartFile userImage,
+                                             @RequestPart(value = "role", required = true) String userRole) {
+        logger.info("User registration API called for username: {}", request.getUserName());
 
         List<String> errors = validateRegistrationRequest(request, userImage, userRole);
         if (!errors.isEmpty()) {
-            logger.warn("Registration validation failed for user: {}", request.getUserName());
+            logger.warn("Registration validation failed for user: {} | Errors: {}", request.getUserName(), errors);
             return createErrorResponse(errors);
         }
 
         try {
+            logger.debug("Uploading user image for username: {}", request.getUserName());
             String fileName = fileService.uploadImage(path, userImage);
+            logger.debug("Image uploaded successfully: {}", fileName);
+
             request.setUserImageUrl(fileName);
+            logger.debug("Creating user in database for username: {}", request.getUserName());
             UserDto registeredUser = userService.registerUser(request, userRole);
-            logger.info("Successfully registered user: {}", request.getUserName());
+
+            logger.info("User registration successful for username: {}", request.getUserName());
             return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
         } catch (InvalidImageFormateException | IOException e) {
-            logger.error("Error updating user: {}", e.getMessage());
+            logger.error("User registration failed for username: {} | Reason: {}", request.getUserName(), e.getMessage());
             return createErrorResponse("Invalid image format: " + e.getMessage());
         }
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping(value = "/health-check")
+    @GetMapping("/health-check")
     public ResponseEntity<ApiResponse> testMethodForRoleBaseAuthentication() {
-        logger.info("Health check requested by admin");
-        return new ResponseEntity<>(new ApiResponse(200, "Working!", true), HttpStatus.OK);
+        logger.info("Health-check API called by ADMIN");
+        ApiResponse response = new ApiResponse(200, "Working!", true);
+        logger.debug("Health-check response: {}", response);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     private void authenticate(String userName, String password) {
@@ -132,8 +145,9 @@ public class AuthenticationController {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userName, password);
         try {
             authenticationManager.authenticate(authToken);
-        } catch (DisabledException exception) {
-            logger.error("Authentication failed - user disabled: {}", userName);
+            logger.debug("Authentication successful for user: {}", userName);
+        } catch (DisabledException e) {
+            logger.error("Authentication failed for user: {} | Reason: Disabled account", userName);
             throw new CredentialException("User Is Disabled!");
         }
     }
@@ -160,12 +174,12 @@ public class AuthenticationController {
     }
 
     private ResponseEntity<?> createErrorResponse(String error) {
+        logger.debug("Creating error response: {}", error);
         return createErrorResponse(List.of(error));
     }
 
     private ResponseEntity<?> createErrorResponse(List<String> errors) {
-        return new ResponseEntity<>(
-                new ErrorResponse(400, INSUFFICIENT_DATA, errors, false),
-                HttpStatus.BAD_REQUEST);
+        logger.debug("Error response created with errors: {}", errors);
+        return new ResponseEntity<>(new ErrorResponse(400, INSUFFICIENT_DATA, errors, false), HttpStatus.BAD_REQUEST);
     }
 }

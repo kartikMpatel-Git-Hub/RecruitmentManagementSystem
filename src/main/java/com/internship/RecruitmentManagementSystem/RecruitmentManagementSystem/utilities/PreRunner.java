@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.Arrays;
 
-@SpringBootApplication
+//@SpringBootApplication
 public class PreRunner implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
@@ -21,7 +21,7 @@ public class PreRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try {
             String[] roles = {
-                    "NORMAL","ADMIN","RECRUITER","HR","INTERVIEWER","CANDIDATE"
+                    "NORMAL","ADMIN","RECRUITER","HR","INTERVIEWER","CANDIDATE","REVIEWER"
             };
             for (String role : roles) {
                 if(!roleRepository.existsByRole(role)){

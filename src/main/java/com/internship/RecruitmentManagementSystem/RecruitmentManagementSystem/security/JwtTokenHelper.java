@@ -36,7 +36,7 @@ public class JwtTokenHelper {
     @PostConstruct
     public void initializeKey(){
         this.key  = Keys.hmacShaKeyFor(secret.getBytes());
-        System.out.println("JWT ALGO KEY : " + key);
+//        System.out.println("JWT ALGO KEY : " + key);
     }
 
     public String getUserNameFromToken(String token){

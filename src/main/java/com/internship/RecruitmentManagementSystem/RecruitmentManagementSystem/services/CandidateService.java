@@ -1,6 +1,5 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
@@ -140,7 +139,7 @@ public class CandidateService implements CandidateServiceInterface {
     }
 
     @Override
-    @Cacheable(value = "userCandidate",key = "'id_' + #candidateId")
+    @Cacheable(value = "userCandidate",key = "'id_' + #p0")
     public CandidateDto getCandidate(Integer candidateId) {
         logger.info("Fetching candidate with ID: {}", candidateId);
         CandidateModel candidate = candidateRepository.findById(candidateId)
@@ -152,7 +151,7 @@ public class CandidateService implements CandidateServiceInterface {
     }
 
     @Override
-    @Cacheable(value = "userCandidate",key = "'userId_' + #candidateId")
+    @Cacheable(value = "userCandidate",key = "'userId_' + #userId")
     public CandidateDto getCandidateByUserId(Integer userId) {
         logger.info("Fetching candidate with userId: {}", userId);
         CandidateModel candidate = candidateRepository.findByUserUserId(userId)
@@ -191,6 +190,12 @@ public class CandidateService implements CandidateServiceInterface {
         logger.info("Updated skills for candidate with ID: {}", candidateId);
 
         return convert(updatedCandidate);
+    }
+
+    @Override
+    @Cacheable(value = "candidateData",key = "'candidate_count'")
+    public Long countCandidates() {
+        return candidateRepository.count();
     }
 
     private CandidateDto convert(CandidateModel candidateModel) {

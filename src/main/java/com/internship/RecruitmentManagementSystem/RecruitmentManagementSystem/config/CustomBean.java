@@ -19,6 +19,7 @@ public class CustomBean {
     @Value("${cloudinary.api_secret}")
     private String apiSecret;
 
+
     @Bean
     public ModelMapper modelMapper(){
         return new ModelMapper();
@@ -32,4 +33,5 @@ public class CustomBean {
                 "api_secret", apiSecret
         ));
     }
+
 }

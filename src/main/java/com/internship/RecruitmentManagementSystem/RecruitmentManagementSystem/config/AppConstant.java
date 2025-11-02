@@ -10,6 +10,7 @@ public class AppConstant {
     public static final Integer HR = 4;
     public static final Integer INTERVIEWER = 5;
     public static final Integer CANDIDATE = 6;
+    public static final Integer REVIEWER = 7;
 
     public static Integer getRoleId(String role) {
         return switch (role) {
@@ -19,6 +20,7 @@ public class AppConstant {
             case "HR" -> HR;
             case "INTERVIEWER" -> INTERVIEWER;
             case "CANDIDATE" -> CANDIDATE;
+            case "REVIEWER" -> REVIEWER;
             default -> -1;
         };
     }

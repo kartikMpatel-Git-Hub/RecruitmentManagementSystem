@@ -12,63 +12,69 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/universities")
 @CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class UniversityController {
+
     private static final Logger logger = LoggerFactory.getLogger(UniversityController.class);
     private final UniversityService universityService;
 
-
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     @PostMapping("/")
-    public ResponseEntity<?> addUniversity(@RequestBody UniversityDto universityDto){
+    public ResponseEntity<?> addUniversity(@RequestBody UniversityDto universityDto) {
+        logger.info("Attempting to add new university: {}", universityDto.getUniversity());
         UniversityDto newUniversity = universityService.addUniversity(universityDto);
+        logger.info("University added successfully with ID: {}", newUniversity.getUniversityId());
         return new ResponseEntity<>(newUniversity, HttpStatus.CREATED);
     }
 
     @GetMapping("/university/{universityName}")
-    public ResponseEntity<?> getUniversityByName(@PathVariable String universityName){
+    public ResponseEntity<?> getUniversityByName(@PathVariable String universityName) {
+        logger.info("Fetching university by name: {}", universityName);
         UniversityDto universityDto = universityService.getUniversityByName(universityName);
-        return new ResponseEntity<>(universityDto,HttpStatus.OK);
+        logger.info("Fetched university: {} (ID: {})", universityDto.getUniversity(), universityDto.getUniversityId());
+        return new ResponseEntity<>(universityDto, HttpStatus.OK);
     }
 
     @GetMapping("/{universityId}")
-    public ResponseEntity<?> getUniversityById(@PathVariable Integer universityId){
+    public ResponseEntity<?> getUniversityById(@PathVariable Integer universityId) {
+        logger.info("Fetching university by ID: {}", universityId);
         UniversityDto universityDto = universityService.getUniversityById(universityId);
-        return new ResponseEntity<>(universityDto,HttpStatus.OK);
+        logger.info("Fetched university: {} (ID: {})", universityDto.getUniversity(), universityId);
+        return new ResponseEntity<>(universityDto, HttpStatus.OK);
     }
 
     @GetMapping
     public ResponseEntity<PaginatedResponse<UniversityDto>> getAllUniversities(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "50") int size,
             @RequestParam(defaultValue = "universityId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
-    ){
+    ) {
+        logger.info("Fetching all universities (page: {}, size: {}, sortBy: {}, sortDir: {})", page, size, sortBy, sortDir);
         PaginatedResponse<UniversityDto> response = universityService.getAllUniversities(page, size, sortBy, sortDir);
+        logger.info("Fetched {} universities", response.getData().size());
         return ResponseEntity.ok(response);
     }
 
-
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     @PutMapping("/{universityId}")
     public ResponseEntity<?> updateUniversity(@PathVariable Integer universityId,
                                               @RequestBody UniversityDto universityDto) {
-        logger.info("Updating University : {}", universityId);
+        logger.info("Updating university with ID: {}", universityId);
         UniversityDto updatedUniversity = universityService.updateUniversity(universityId, universityDto);
+        logger.info("Updated university successfully: {} (ID: {})", updatedUniversity.getUniversity(), universityId);
         return new ResponseEntity<>(updatedUniversity, HttpStatus.OK);
     }
 
-
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     @DeleteMapping("/{universityId}")
     public ResponseEntity<?> deleteUniversity(@PathVariable Integer universityId) {
+        logger.info("Deleting university with ID: {}", universityId);
         universityService.deleteUniversity(universityId);
-        return new ResponseEntity<>(new ApiResponse(200,"Delete Successfully !",true),HttpStatus.OK);
+        logger.info("Deleted university successfully with ID: {}", universityId);
+        return new ResponseEntity<>(new ApiResponse(200, "Delete Successfully!", true), HttpStatus.OK);
     }
-
 }

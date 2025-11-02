@@ -7,7 +7,6 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.pa
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.CandidateEducationServiceInterface;
 import jakarta.transaction.Transactional;
-import org.hibernate.annotations.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;

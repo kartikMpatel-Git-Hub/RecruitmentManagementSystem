@@ -24,4 +24,6 @@ public interface CandidateServiceInterface {
     CandidateDto getCandidateByUserId(Integer userId);
 
     CandidateDto updateCandidateSkills(Integer candidateId, List<Integer> skillIds);
+
+    Long countCandidates();
 }

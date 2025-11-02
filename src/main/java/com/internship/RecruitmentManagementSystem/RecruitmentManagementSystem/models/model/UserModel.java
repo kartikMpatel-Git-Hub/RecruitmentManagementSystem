@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,6 +29,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class UserModel extends BaseEntity implements UserDetails {
 
     @Id
@@ -59,11 +61,17 @@ public class UserModel extends BaseEntity implements UserDetails {
     @JoinColumn(name = "role_id",nullable = false)
     private RoleModel role;
 
+    @Column(name = "user_account_non_expired", nullable = false, columnDefinition = "TINYINT(1)")
     private Boolean userAccountNonExpired = true;
-    private Boolean userAccountNonLocked = true;
-    private Boolean userCredentialsNonExpired = true;
-    private Boolean userEnabled = true;
 
+    @Column(name = "user_account_non_locked", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean userAccountNonLocked = true;
+
+    @Column(name = "user_credentials_non_expired", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean userCredentialsNonExpired = true;
+
+    @Column(name = "user_enabled", nullable = false, columnDefinition = "TINYINT(1)")
+    private Boolean userEnabled = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

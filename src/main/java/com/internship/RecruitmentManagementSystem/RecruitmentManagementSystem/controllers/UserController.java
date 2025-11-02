@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,12 +46,12 @@ public class UserController {
 
         if (userId == null) {
             logger.warn("Delete user attempt failed: User ID is null");
-            return createErrorResponse("User Id Requires !");
+            return createErrorResponse("User Id is required!");
         }
 
         userService.deleteUser(userId);
         logger.info("Successfully deleted user with ID: {}", userId);
-        return new ResponseEntity<>(new ApiResponse(200, "Deleted", true), HttpStatus.OK);
+        return ResponseEntity.ok(new ApiResponse(200, "Deleted Successfully", true));
     }
 
     @GetMapping("/profile")
@@ -62,42 +61,49 @@ public class UserController {
         logger.info("Fetching profile for user: {}", userName);
 
         UserDto user = userService.getUserByUserName(userName);
-        if(user.getRole().getRole().equals("CANDIDATE")){
+        if (user.getRole().getRole().equalsIgnoreCase("CANDIDATE")) {
             CandidateDto candidate = candidateService.getCandidateByUserId(user.getUserId());
-            return new ResponseEntity<>(candidate, HttpStatus.OK);
+            logger.info("Returning candidate profile for user ID: {}", user.getUserId());
+            return ResponseEntity.ok(candidate);
         }
-        return new ResponseEntity<>(user, HttpStatus.OK);
+
+        logger.info("Returning user profile for user ID: {}", user.getUserId());
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getProfile(@PathVariable Integer userId) {
+    public ResponseEntity<UserDto> getProfile(@PathVariable Integer userId) {
+        logger.info("Fetching user profile by ID: {}", userId);
         UserDto user = userService.getUser(userId);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        return ResponseEntity.ok(user);
     }
 
-
-
     @PutMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> updateUserData(@RequestPart("user") @Valid UserDto request,
-                                            @PathVariable Integer userId,
-                                            @RequestPart(value = "image", required = false) MultipartFile userImage,
-                                            @RequestPart(value = "accountInfo", required = false) AccountDetails accountDetails) {
+    public ResponseEntity<?> updateUserData(
+            @RequestPart("user") @Valid UserDto request,
+            @PathVariable Integer userId,
+            @RequestPart(value = "image", required = false) MultipartFile userImage,
+            @RequestPart(value = "accountInfo", required = false) AccountDetails accountDetails) {
+
         logger.info("Attempting to update user with ID: {}", userId);
 
         try {
             if (userImage != null && !userImage.isEmpty()) {
                 String fileName = fileService.uploadImage(path, userImage);
                 request.setUserImageUrl(fileName);
+                logger.info("Uploaded user image for user ID: {}", userId);
             }
 
             UserDto updatedUser = userService.updateUser(request, userId, accountDetails);
             logger.info("Successfully updated user with ID: {}", userId);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+            return ResponseEntity.ok(updatedUser);
+
         } catch (InvalidImageFormateException e) {
-            logger.error("Error updating user: {}", e.getMessage());
+            logger.error("Invalid image format for user ID {}: {}", userId, e.getMessage());
             return createErrorResponse("Invalid image format: " + e.getMessage());
         } catch (Exception e) {
-            return createErrorResponse("Something Went Wrong While Uploading !" + e.getMessage());
+            logger.error("Error updating user with ID {}: {}", userId, e.getMessage());
+            return createErrorResponse("Something went wrong while updating user: " + e.getMessage());
         }
     }
 
@@ -108,8 +114,9 @@ public class UserController {
             @RequestParam(defaultValue = "30") Integer size,
             @RequestParam(defaultValue = "userId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
-    ){
-        return new ResponseEntity<>(userService.getUsers(page, size, sortBy, sortDir),HttpStatus.OK);
+    ) {
+        logger.info("Fetching all users (page: {}, size: {}, sortBy: {}, sortDir: {})", page, size, sortBy, sortDir);
+        return ResponseEntity.ok(userService.getUsers(page, size, sortBy, sortDir));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -119,8 +126,9 @@ public class UserController {
             @RequestParam(defaultValue = "30") Integer size,
             @RequestParam(defaultValue = "userId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
-    ){
-        return new ResponseEntity<>(userService.getNonCandidates(page, size, sortBy, sortDir),HttpStatus.OK);
+    ) {
+        logger.info("Fetching non-candidate users (page: {}, size: {})", page, size);
+        return ResponseEntity.ok(userService.getNonCandidates(page, size, sortBy, sortDir));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
@@ -130,21 +138,16 @@ public class UserController {
             @RequestParam(defaultValue = "30") Integer size,
             @RequestParam(defaultValue = "userId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
-    ){
-        return new ResponseEntity<>(userService.getCandidates(page, size, sortBy, sortDir),HttpStatus.OK);
+    ) {
+        logger.info("Fetching candidate users (page: {}, size: {})", page, size);
+        return ResponseEntity.ok(userService.getCandidates(page, size, sortBy, sortDir));
     }
 
-    private boolean isNullOrEmpty(String str) {
-        return str == null || str.trim().isEmpty();
-    }
-
-    private ResponseEntity<?> createErrorResponse(String error) {
+    private ResponseEntity<ErrorResponse> createErrorResponse(String error) {
         return createErrorResponse(List.of(error));
     }
 
-    private ResponseEntity<?> createErrorResponse(List<String> errors) {
-        return new ResponseEntity<>(
-                new ErrorResponse(400, "In Sufficient Data", errors, false),
-                HttpStatus.BAD_REQUEST);
+    private ResponseEntity<ErrorResponse> createErrorResponse(List<String> errors) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(400, "Insufficient Data", errors, false));
     }
 }
