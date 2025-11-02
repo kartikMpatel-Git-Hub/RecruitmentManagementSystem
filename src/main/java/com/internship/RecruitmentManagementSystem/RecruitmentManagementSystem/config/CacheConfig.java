@@ -38,7 +38,10 @@ public class CacheConfig {
                 "candidateEducationData",
                 "candidateEducation",
                 "candidateSkillData",
-                "candidateSkill"
+                "candidateSkill",
+                "positionData",
+                "applicationData",
+                "shortlistedApplicationData"
         );
         cacheManager.setCaffeine(caffeine);
         return cacheManager;

@@ -8,9 +8,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "tbl_skill",indexes = {
+        @Index(name = "idx_skill_id",columnList = "skillId"),
         @Index(name = "idx_created_at", columnList = "createdAt"),
         @Index(name = "idx_updated_at", columnList = "updatedAt")
 })
@@ -18,6 +20,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class SkillModel extends BaseEntity {
 
     @Id

@@ -1,0 +1,41 @@
+[33mcommit 46858123900db311957be1218fa0519f0231bd28[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mapplication-shortlists[m[33m)[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Sun Nov 2 10:35:58 2025 +0530
+
+    application module complete
+
+[33mcommit 1f5dee1d636675029eced8d8ddc386dd0b45898c[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Sun Nov 2 10:27:01 2025 +0530
+
+    application and shortlist's Module Complete
+
+[33mcommit 218fb35ee11dc6e5469e484de564a00929f19e77[m[33m ([m[1;31morigin/candidate-skill-education-module-v1[m[33m, [m[1;32mcandidate-skill-education-module-v1[m[33m)[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Sat Oct 25 15:19:12 2025 +0530
+
+    candidate skill and education module complete
+
+[33mcommit a4e6cc95a6c721a90180a430cbea6df609489f6d[m[33m ([m[1;31morigin/candidate-v2-university-v1[m[33m, [m[1;32mcandidate-v2-university-v1[m[33m)[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Sun Oct 19 15:28:27 2025 +0530
+
+    Complete Candidate Module And University Module
+
+[33mcommit 3d2f770cf5460d85cbb013b02460abe69caa74d3[m[33m ([m[1;31morigin/candidate-v1[m[33m, [m[1;32mcandidate-v1[m[33m)[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Sat Oct 4 11:45:24 2025 +0530
+
+    Candidate Module Version-1
+
+[33mcommit eda82315812b93d4fee97c17f29d10fa575bafe5[m[33m ([m[1;31morigin/degree-module[m[33m, [m[1;32mdegree-module[m[33m)[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Sun Sep 28 21:05:38 2025 +0530
+
+    Complete Degree Module And Improve User Module
+
+[33mcommit b8a6d981ad9c602e16fc42a32cf5af9e87228b3f[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: kartikMpatel <kartikpatel7892@gmail.com>
+Date:   Thu Sep 18 00:32:14 2025 +0530
+
+    first commit

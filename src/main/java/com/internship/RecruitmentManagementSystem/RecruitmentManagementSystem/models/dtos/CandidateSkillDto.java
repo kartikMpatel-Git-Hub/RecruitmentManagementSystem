@@ -1,8 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ProficiencyLevel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.CandidateModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.SkillModel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

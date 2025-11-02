@@ -8,6 +8,9 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.pa
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.DegreeRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.DegreeServiceInterface;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class DegreeService implements DegreeServiceInterface {
@@ -41,11 +45,9 @@ public class DegreeService implements DegreeServiceInterface {
     }
 
     @Override
-    @Transactional
     @CacheEvict(value = "degreeData", allEntries = true)
     public DegreeDto addDegree(DegreeDto degreeDto) {
         logger.info("Attempting to add new degree: {}", degreeDto.getDegree());
-        validateDegreeDto(degreeDto);
 
         DegreeModel savedDegreeModel = degreeRepository.save(convertor(degreeDto));
         logger.info("Successfully added degree with ID: {} and Name: {}", savedDegreeModel.getDegreeId(), savedDegreeModel.getDegree());
@@ -68,7 +70,6 @@ public class DegreeService implements DegreeServiceInterface {
     }
 
     @Override
-    @Transactional
     @Caching(evict = {
             @CacheEvict(value = "degreeData", allEntries = true),
             @CacheEvict(value = "userData", key = "'id_' + #degreeId")

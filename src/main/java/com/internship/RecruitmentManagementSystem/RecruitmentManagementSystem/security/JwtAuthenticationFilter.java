@@ -60,6 +60,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
             if(jwtTokenHelper.validateToken(token,userDetails)){
                 // Authentication
+                if (!userDetails.isEnabled()) {
+                    throw new JwtAuthenticationException("User is disabled!");
+                }
+                if (!userDetails.isAccountNonLocked()) {
+                    throw new JwtAuthenticationException("User account is locked!");
+                }
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                         new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
                 usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -115,7 +116,11 @@ public class SkillService implements SkillServiceInterface {
     })
     public SkillDto updateSkill(SkillDto newSkill, Integer skillId) {
         logger.info("Updating skill with ID: {}", skillId);
-
+        SkillModel Skill = getBySkill(newSkill.getSkill());
+        if (Skill != null && !Skill.getSkillId().equals(skillId)) {
+            logger.error("Skill '{}' already exists with a different ID: {}", newSkill.getSkill(), Skill.getSkillId());
+            throw new ResourceAlreadyExistsException("Skill already exists");
+        }
         SkillModel existingSkill = skillRepository.findById(skillId)
                 .orElseThrow(() -> {
                     logger.error("Skill not found for update, ID: {}", skillId);
