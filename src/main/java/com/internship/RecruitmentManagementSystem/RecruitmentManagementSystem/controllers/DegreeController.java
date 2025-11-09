@@ -1,6 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.DegreeDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.DegreeCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.DegreeUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.DegreeResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.DegreeService;
@@ -22,7 +24,6 @@ public class DegreeController {
     private static final String DEGREE_ADDED = "Degree added successfully";
     private static final String DEGREE_UPDATED = "Degree updated successfully";
     private static final String DEGREE_DELETED = "Degree deleted successfully";
-
     private final DegreeService degreeService;
 
     public DegreeController(DegreeService degreeService) {
@@ -31,9 +32,9 @@ public class DegreeController {
 
     @PostMapping("/")
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
-    public ResponseEntity<?> addDegree(@RequestBody @Valid DegreeDto degreeDto) {
+    public ResponseEntity<?> addDegree(@RequestBody @Valid DegreeCreateDto degreeDto) {
         logger.info("Received request to add new degree: {}", degreeDto.getDegree());
-            DegreeDto responseDegree = degreeService.addDegree(degreeDto);
+            var responseDegree = degreeService.addDegree(degreeDto);
             logger.info(DEGREE_ADDED + " with ID: {}", responseDegree.getDegreeId());
             return new ResponseEntity<>(responseDegree, HttpStatus.CREATED);
     }
@@ -42,7 +43,7 @@ public class DegreeController {
     public ResponseEntity<?> getDegree(@PathVariable Integer degreeId) {
         logger.info("Fetching degree with ID: {}", degreeId);
         try {
-            DegreeDto degree = degreeService.getDegree(degreeId);
+            var degree = degreeService.getDegree(degreeId);
             logger.info("Successfully fetched degree: {}", degree);
             return new ResponseEntity<>(degree, HttpStatus.OK);
         } catch (Exception e) {
@@ -52,14 +53,14 @@ public class DegreeController {
     }
 
     @GetMapping
-    public ResponseEntity<PaginatedResponse<DegreeDto>> getDegrees(
+    public ResponseEntity<PaginatedResponse<DegreeResponseDto>> getDegrees(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(defaultValue = "degreeId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
         logger.info("Fetching degrees - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
-        PaginatedResponse<DegreeDto> response = degreeService.getAllDegrees(page, size, sortBy, sortDir);
+        var response = degreeService.getAllDegrees(page, size, sortBy, sortDir);
         logger.info("Fetched {} degrees successfully", response.getData().size());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -81,10 +82,10 @@ public class DegreeController {
 
     @PutMapping("/{degreeId}")
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
-    public ResponseEntity<?> updateDegrees(@PathVariable Integer degreeId, @RequestBody @Valid DegreeDto degreeDto) {
+    public ResponseEntity<?> updateDegrees(@PathVariable Integer degreeId, @RequestBody @Valid DegreeUpdateDto degreeDto) {
         logger.info("Updating degree with ID: {}", degreeId);
         try {
-            DegreeDto updatedDegree = degreeService.updateDegree(degreeId, degreeDto);
+            var updatedDegree = degreeService.updateDegree(degreeId, degreeDto);
             logger.info(DEGREE_UPDATED + " (ID: {})", degreeId);
             return new ResponseEntity<>(updatedDegree, HttpStatus.OK);
         } catch (Exception e) {

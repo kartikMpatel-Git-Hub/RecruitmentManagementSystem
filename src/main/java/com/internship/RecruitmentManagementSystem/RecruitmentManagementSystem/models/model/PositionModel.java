@@ -18,7 +18,6 @@ import java.util.List;
         @Index(name = "idx_position_status",columnList = "position_status_id"),
         @Index(name = "idx_created_at", columnList = "createdAt"),
         @Index(name = "idx_updated_at", columnList = "updatedAt"),
-        @Index(name = "idx_created_by", columnList = "createdBy")
 })
 @Getter
 @Setter
@@ -32,13 +31,13 @@ public class PositionModel extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer positionId;
 
-    @Column(nullable = false,length = 50)
+    @Column(nullable = false,length = 100)
     private String positionTitle;
 
-    @Column(nullable = false,length = 500)
+    @Column(nullable = false,length = 2000)
     private String positionDescription;
 
-    @Column(nullable = false,length = 500)
+    @Column(nullable = false,length = 2000)
     private String positionCriteria;
 
     @Column(nullable = false,length = 4)
@@ -66,6 +65,9 @@ public class PositionModel extends BaseEntity {
 
     @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
     private List<PositionRequirementModel> positionRequirements;
+
+    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    private List<PositionRoundModel> positionRounds;
 
     @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
     private List<ApplicationModel> positionApplications;

@@ -1,0 +1,7 @@
+package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories;
+
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.InterviewerFeedbackModel;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface InterviewerFeedbackRepository extends JpaRepository<InterviewerFeedbackModel,Integer> {
+}

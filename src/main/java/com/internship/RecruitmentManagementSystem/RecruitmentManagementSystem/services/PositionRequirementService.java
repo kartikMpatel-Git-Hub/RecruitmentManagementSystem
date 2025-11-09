@@ -24,7 +24,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+//@Service
+@Deprecated
 @RequiredArgsConstructor
 public class PositionRequirementService implements PositionRequirementServiceInterface {
 

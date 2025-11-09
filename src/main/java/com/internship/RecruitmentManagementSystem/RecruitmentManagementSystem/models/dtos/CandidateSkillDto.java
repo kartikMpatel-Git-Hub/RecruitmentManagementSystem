@@ -10,6 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class CandidateSkillDto {
 
     private Integer candidateSkillId;

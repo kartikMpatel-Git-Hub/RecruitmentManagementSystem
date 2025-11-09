@@ -1,6 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UniversityDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UniversityCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UniversityUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UniversityResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UniversityService;
@@ -23,9 +25,9 @@ public class UniversityController {
 
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     @PostMapping("/")
-    public ResponseEntity<?> addUniversity(@RequestBody UniversityDto universityDto) {
+    public ResponseEntity<?> addUniversity(@RequestBody UniversityCreateDto universityDto) {
         logger.info("Attempting to add new university: {}", universityDto.getUniversity());
-        UniversityDto newUniversity = universityService.addUniversity(universityDto);
+        var newUniversity = universityService.addUniversity(universityDto);
         logger.info("University added successfully with ID: {}", newUniversity.getUniversityId());
         return new ResponseEntity<>(newUniversity, HttpStatus.CREATED);
     }
@@ -33,7 +35,7 @@ public class UniversityController {
     @GetMapping("/university/{universityName}")
     public ResponseEntity<?> getUniversityByName(@PathVariable String universityName) {
         logger.info("Fetching university by name: {}", universityName);
-        UniversityDto universityDto = universityService.getUniversityByName(universityName);
+        var universityDto = universityService.getUniversityByName(universityName);
         logger.info("Fetched university: {} (ID: {})", universityDto.getUniversity(), universityDto.getUniversityId());
         return new ResponseEntity<>(universityDto, HttpStatus.OK);
     }
@@ -41,20 +43,20 @@ public class UniversityController {
     @GetMapping("/{universityId}")
     public ResponseEntity<?> getUniversityById(@PathVariable Integer universityId) {
         logger.info("Fetching university by ID: {}", universityId);
-        UniversityDto universityDto = universityService.getUniversityById(universityId);
+        var universityDto = universityService.getUniversityById(universityId);
         logger.info("Fetched university: {} (ID: {})", universityDto.getUniversity(), universityId);
         return new ResponseEntity<>(universityDto, HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<PaginatedResponse<UniversityDto>> getAllUniversities(
+    public ResponseEntity<PaginatedResponse<UniversityResponseDto>> getAllUniversities(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(defaultValue = "universityId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
         logger.info("Fetching all universities (page: {}, size: {}, sortBy: {}, sortDir: {})", page, size, sortBy, sortDir);
-        PaginatedResponse<UniversityDto> response = universityService.getAllUniversities(page, size, sortBy, sortDir);
+        var response = universityService.getAllUniversities(page, size, sortBy, sortDir);
         logger.info("Fetched {} universities", response.getData().size());
         return ResponseEntity.ok(response);
     }
@@ -62,9 +64,9 @@ public class UniversityController {
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     @PutMapping("/{universityId}")
     public ResponseEntity<?> updateUniversity(@PathVariable Integer universityId,
-                                              @RequestBody UniversityDto universityDto) {
+                                              @RequestBody UniversityUpdateDto universityDto) {
         logger.info("Updating university with ID: {}", universityId);
-        UniversityDto updatedUniversity = universityService.updateUniversity(universityId, universityDto);
+        var updatedUniversity = universityService.updateUniversity(universityId, universityDto);
         logger.info("Updated university successfully: {} (ID: {})", updatedUniversity.getUniversity(), universityId);
         return new ResponseEntity<>(updatedUniversity, HttpStatus.OK);
     }

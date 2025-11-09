@@ -5,6 +5,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.pa
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -161,6 +163,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> HttpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex) {
         String message = ex.getMostSpecificCause().getMessage();
+        System.out.println("ERROR : "+ex.getMostSpecificCause().getMessage());
         if (message != null && message.contains("Stream")) {
             return new ResponseEntity<>(
                     new ErrorResponse(400,"Invalid Value",List.of("Must be arts, commerce, science"),false),

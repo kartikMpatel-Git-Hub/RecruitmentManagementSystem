@@ -3,5 +3,7 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.r
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.ShortlistedApplicationStatusModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ShortlistedApplicationStatusRepository extends JpaRepository<ShortlistedApplicationStatusModel,Integer> {
+public interface ShortlistedApplicationStatusRepository
+//        extends JpaRepository<ShortlistedApplicationStatusModel,Integer>
+{
 }

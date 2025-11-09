@@ -2,7 +2,9 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UniversityDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UniversityCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UniversityUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UniversityResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UniversityModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.UniversityRepository;
@@ -31,7 +33,7 @@ public class UniversityService implements UniversityServiceInterface {
 
     @Override
     @CacheEvict(value = "universityData", allEntries = true)
-    public UniversityDto addUniversity(UniversityDto university) {
+    public UniversityResponseDto addUniversity(UniversityCreateDto university) {
         logger.info("Attempting to add new university: {}", university.getUniversity());
 
         if (universityRepository.existsByUniversity(university.getUniversity())) {
@@ -47,7 +49,7 @@ public class UniversityService implements UniversityServiceInterface {
 
     @Override
     @Cacheable(value = "userUniversity" ,key = "'universityName_' + #universityName")
-    public UniversityDto getUniversityByName(String universityName) {
+    public UniversityResponseDto getUniversityByName(String universityName) {
         logger.info("Fetching university by name: {}", universityName);
 
         UniversityModel universityModel = universityRepository.findByUniversity(universityName)
@@ -62,7 +64,7 @@ public class UniversityService implements UniversityServiceInterface {
 
     @Override
     @Cacheable(value = "userUniversity",key = "'id_' + #universityId")
-    public UniversityDto getUniversityById(Integer universityId) {
+    public UniversityResponseDto getUniversityById(Integer universityId) {
         logger.info("Fetching university by ID: {}", universityId);
 
         UniversityModel universityModel = universityRepository.findById(universityId)
@@ -77,7 +79,7 @@ public class UniversityService implements UniversityServiceInterface {
 
     @Override
     @Cacheable(value = "universityData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<UniversityDto> getAllUniversities(int page, int size, String sortBy, String sortDir) {
+    public PaginatedResponse<UniversityResponseDto> getAllUniversities(int page, int size, String sortBy, String sortDir) {
         logger.info("Fetching all universities - Page: {}, Size: {}, SortBy: {}, SortDir: {}", page, size, sortBy, sortDir);
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
@@ -87,7 +89,7 @@ public class UniversityService implements UniversityServiceInterface {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<UniversityModel> universitiesPages = universityRepository.findAll(pageable);
 
-        PaginatedResponse<UniversityDto> response = new PaginatedResponse<>();
+        PaginatedResponse<UniversityResponseDto> response = new PaginatedResponse<>();
         response.setData(universitiesPages.getContent().stream().map(this::convertor).toList());
         response.setCurrentPage(universitiesPages.getNumber());
         response.setLast(universitiesPages.isLast());
@@ -100,12 +102,11 @@ public class UniversityService implements UniversityServiceInterface {
     }
 
     @Override
-//    @CacheEvict(value = "universityData", allEntries = true)
     @Caching(evict = {
             @CacheEvict(value = "universityData",allEntries = true),
             @CacheEvict(value = "userUniversity",allEntries = true)
     })
-    public UniversityDto updateUniversity(Integer universityId, UniversityDto universityDto) {
+    public UniversityResponseDto updateUniversity(Integer universityId, UniversityUpdateDto universityDto) {
         logger.info("Updating university with ID: {}", universityId);
 
         UniversityModel existingUniversity = universityRepository.findById(universityId)
@@ -144,11 +145,11 @@ public class UniversityService implements UniversityServiceInterface {
         logger.info("Successfully deleted university with ID: {}", universityId);
     }
 
-    private UniversityDto convertor(UniversityModel universityModel) {
-        return modelMapper.map(universityModel, UniversityDto.class);
+    private UniversityResponseDto convertor(UniversityModel universityModel) {
+        return modelMapper.map(universityModel, UniversityResponseDto.class);
     }
 
-    private UniversityModel convertor(UniversityDto universityDto) {
+    private UniversityModel convertor(UniversityCreateDto universityDto) {
         return modelMapper.map(universityDto, UniversityModel.class);
     }
 }

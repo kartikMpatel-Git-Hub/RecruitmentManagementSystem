@@ -4,6 +4,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ShortlistedApplicationStatusDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
+@Deprecated
 public interface ShortlistedApplicationServiceInterface {
 
     ShortlistedApplicationDto shortListApplication(ShortlistedApplicationDto shortlistedApplication);

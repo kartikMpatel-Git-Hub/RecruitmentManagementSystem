@@ -1,7 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ApplicationDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ApplicationStatusDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationUpdateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.ApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,29 +22,19 @@ public class ApplicationController {
     private final ApplicationService applicationService;
 
     @PostMapping
-    public ResponseEntity<?> createApplication(@RequestBody @Valid ApplicationDto newApplication) {
+    public ResponseEntity<?> createApplication(@RequestBody @Valid ApplicationCreateDto newApplication) {
         log.info("Creating new application for candidateId: {} and positionId: {}",
                 newApplication.getCandidateId(), newApplication.getPositionId());
-        ApplicationDto createdApplication = applicationService.addApplication(newApplication);
+        var createdApplication = applicationService.addApplication(newApplication);
         log.info("Application created with applicationId: {}", createdApplication.getApplicationId());
         return new ResponseEntity<>(createdApplication, HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{applicationId}")
-    public ResponseEntity<?> updateApplication(
-            @PathVariable Integer applicationId,
-            @RequestBody @Valid ApplicationDto newApplication) {
-        log.info("Updating application with applicationId: {}", applicationId);
-        ApplicationDto updatedApplication = applicationService.updateApplication(applicationId, newApplication);
-        log.info("Application updated with applicationId: {}", updatedApplication.getApplicationId());
-        return new ResponseEntity<>(updatedApplication, HttpStatus.OK);
     }
 
     @PatchMapping("/{applicationId}/application-status/{applicationStatusId}")
     public ResponseEntity<?> updateApplicationStatus(
             @PathVariable Integer applicationId,
             @PathVariable Integer applicationStatusId,
-            @RequestBody @Valid ApplicationStatusDto applicationStatus
+            @RequestBody @Valid ApplicationStatusUpdateDto applicationStatus
             ){
         return new ResponseEntity<>(applicationService.updateApplicationStatus(applicationId,applicationStatusId,applicationStatus),
                 HttpStatus.OK);
@@ -54,7 +45,7 @@ public class ApplicationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "applicationId") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
         log.info("Fetching all applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
         ResponseEntity<?> response = new ResponseEntity<>(
                 applicationService.getAllApplications(page, size, sortBy, sortDir),
@@ -69,7 +60,7 @@ public class ApplicationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "applicationId") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
         log.info("Fetching all applications With candidateId : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",candidateId, page, size, sortBy, sortDir);
         ResponseEntity<?> response = new ResponseEntity<>(
                 applicationService.getCandidateApplications(candidateId,page, size, sortBy, sortDir),
@@ -96,7 +87,7 @@ public class ApplicationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "applicationId") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
         log.info("Fetching all applications With positionId : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
         ResponseEntity<?> response = new ResponseEntity<>(
                 applicationService.getPositionApplications(positionId,page, size, sortBy, sortDir),
@@ -108,9 +99,54 @@ public class ApplicationController {
     @GetMapping("/{applicationId}")
     public ResponseEntity<?> getApplication(@PathVariable Integer applicationId) {
         log.info("Fetching application with applicationId: {}", applicationId);
-        ApplicationDto application = applicationService.getApplication(applicationId);
+        var application = applicationService.getApplication(applicationId);
         log.info("Fetched application for applicationId: {}", applicationId);
         return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+
+    @GetMapping("/shortlists")
+    public ResponseEntity<?> getShortlistedApplication(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        log.info("Fetching Shortlisted applications");
+        var application = applicationService.getAllShortlistedApplications(page,size,sortBy,sortDir);
+        log.info("Fetched Shortlisted applications");
+        return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+    @GetMapping("/shortlists/candidate/{candidateId}")
+    public ResponseEntity<?> getCandidateShortlistedApplication(
+            @PathVariable Integer candidateId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        log.info("Fetching Shortlisted application with candidateId : {}",candidateId);
+        var application = applicationService.getCandidateShortlistedApplications(candidateId,page,size,sortBy,sortDir);
+        log.info("Fetched Shortlisted applications with candidateId : {}",candidateId);
+        return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+    @GetMapping("/shortlists/position/{positionId}")
+    public ResponseEntity<?> getPositionShortlistedApplication(
+            @PathVariable Integer positionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        log.info("Fetching Shortlisted application with positionId : {}",positionId);
+        var application = applicationService.getPositionShortlistedApplications(positionId,page,size,sortBy,sortDir);
+        log.info("Fetched Shortlisted applications with positionId : {}",positionId);
+        return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{applicationId}/shortlist")
+    public ResponseEntity<?> shortlistApplication(@PathVariable Integer applicationId) {
+        log.info("Shortlisting application with applicationId: {}", applicationId);
+        applicationService.shortlistApplication(applicationId);
+        log.info("Shortlisted application for applicationId: {}", applicationId);
+        return new ResponseEntity<>("Application With applicationId : "+applicationId+" Shortlisted Successfully !",
+                HttpStatus.OK);
     }
 
     @DeleteMapping("/{applicationId}")

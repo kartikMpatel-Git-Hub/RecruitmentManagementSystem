@@ -2,15 +2,14 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ErrorResponseException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.DegreeDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.DegreeCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.DegreeUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.DegreeResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.DegreeModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.DegreeRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.DegreeServiceInterface;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Validator;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class DegreeService implements DegreeServiceInterface {
@@ -46,7 +44,7 @@ public class DegreeService implements DegreeServiceInterface {
 
     @Override
     @CacheEvict(value = "degreeData", allEntries = true)
-    public DegreeDto addDegree(DegreeDto degreeDto) {
+    public DegreeResponseDto addDegree(DegreeCreateDto degreeDto) {
         logger.info("Attempting to add new degree: {}", degreeDto.getDegree());
 
         DegreeModel savedDegreeModel = degreeRepository.save(convertor(degreeDto));
@@ -74,7 +72,7 @@ public class DegreeService implements DegreeServiceInterface {
             @CacheEvict(value = "degreeData", allEntries = true),
             @CacheEvict(value = "userData", key = "'id_' + #degreeId")
     })
-    public DegreeDto updateDegree(Integer degreeId, DegreeDto newDegree) {
+    public DegreeResponseDto updateDegree(Integer degreeId, DegreeUpdateDto newDegree) {
         logger.info("Attempting to update degree with ID: {}", degreeId);
         validateDegreeId(degreeId);
 
@@ -88,7 +86,7 @@ public class DegreeService implements DegreeServiceInterface {
 
     @Override
     @Cacheable(value = "userDegree",key = "'id_' + #degreeId")
-    public DegreeDto getDegree(Integer degreeId) {
+    public DegreeResponseDto getDegree(Integer degreeId) {
         logger.info("Fetching degree with ID: {}", degreeId);
         validateDegreeId(degreeId);
 
@@ -99,7 +97,7 @@ public class DegreeService implements DegreeServiceInterface {
 
     @Override
     @Cacheable(value = "degreeData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<DegreeDto> getAllDegrees(int page, int size, String sortBy, String sortDir) {
+    public PaginatedResponse<DegreeResponseDto> getAllDegrees(int page, int size, String sortBy, String sortDir) {
         logger.info("Fetching all degrees - Page: {}, Size: {}, SortBy: {}, SortDir: {}", page, size, sortBy, sortDir);
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
@@ -109,7 +107,7 @@ public class DegreeService implements DegreeServiceInterface {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<DegreeModel> pageResponse = degreeRepository.findAll(pageable);
 
-        PaginatedResponse<DegreeDto> response = new PaginatedResponse<>();
+        PaginatedResponse<DegreeResponseDto> response = new PaginatedResponse<>();
         response.setData(pageResponse.stream().map(this::convertor).toList());
         response.setCurrentPage(pageResponse.getNumber());
         response.setLast(pageResponse.isLast());
@@ -121,7 +119,7 @@ public class DegreeService implements DegreeServiceInterface {
         return response;
     }
 
-    private void validateDegreeDto(DegreeDto degreeDto) {
+    private void validateDegreeDto(DegreeResponseDto degreeDto) {
         List<String> errors = new ArrayList<>();
         if (degreeDto.getDegree() == null || degreeDto.getDegree().trim().isEmpty()) {
             errors.add(DEGREE_NOT_FOUND);
@@ -156,7 +154,7 @@ public class DegreeService implements DegreeServiceInterface {
                 });
     }
 
-    private void updateDegreeFields(DegreeModel degree, DegreeDto newDegree) {
+    private void updateDegreeFields(DegreeModel degree, DegreeUpdateDto newDegree) {
         if (newDegree.getDegree() != null && !newDegree.getDegree().trim().isEmpty()) {
             logger.debug("Updating degree name from '{}' to '{}'", degree.getDegree(), newDegree.getDegree());
             degree.setDegree(newDegree.getDegree());
@@ -167,11 +165,12 @@ public class DegreeService implements DegreeServiceInterface {
         }
     }
 
-    private DegreeDto convertor(DegreeModel degreeModel) {
-        return modelMapper.map(degreeModel, DegreeDto.class);
+    private DegreeResponseDto convertor(DegreeModel degreeModel) {
+        return modelMapper.map(degreeModel, DegreeResponseDto.class);
     }
 
-    private DegreeModel convertor(DegreeDto degreeDto) {
-        return modelMapper.map(degreeDto, DegreeModel.class);
+    private DegreeModel convertor(DegreeCreateDto degreeModel) {
+        return modelMapper.map(degreeModel, DegreeModel.class);
     }
+
 }

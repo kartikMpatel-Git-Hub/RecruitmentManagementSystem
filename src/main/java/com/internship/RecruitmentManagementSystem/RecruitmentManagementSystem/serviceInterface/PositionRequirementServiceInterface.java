@@ -3,6 +3,7 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.PositionRequirementDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
+@Deprecated
 public interface PositionRequirementServiceInterface {
 
     PositionRequirementDto addPositionRequirement(Integer positionId,PositionRequirementDto newPosition);

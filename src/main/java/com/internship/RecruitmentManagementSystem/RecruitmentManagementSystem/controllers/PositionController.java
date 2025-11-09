@@ -1,9 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.DegreeDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.PositionDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.PositionRequirementDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.PositionRequirementService;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.PositionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +21,10 @@ public class PositionController {
 
     private static final Logger log = LoggerFactory.getLogger(PositionController.class);
     private final PositionService positionService;
-    private final PositionRequirementService positionRequirementService;
 
     @PostMapping("/")
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
-    public ResponseEntity<?> addPosition(@RequestBody PositionDto newPosition) {
+    public ResponseEntity<?> addPosition(@RequestBody PositionCreateDto newPosition) {
         log.info("Adding new position: {}", newPosition.getPositionTitle());
         var result = positionService.addPosition(newPosition);
         log.info("Position added successfully with ID: {}", result.getPositionId());
@@ -40,7 +36,7 @@ public class PositionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "positionId") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
+            @RequestParam(defaultValue = "desc") String sortDir
     ) {
         log.info("Fetching all positions (page: {}, size: {}, sortBy: {}, sortDir: {})", page, size, sortBy, sortDir);
         var response = positionService.getAllPositions(page, size, sortBy, sortDir);
@@ -68,7 +64,7 @@ public class PositionController {
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     public ResponseEntity<?> updatePosition(
             @PathVariable Integer positionId,
-            @RequestBody @Valid PositionDto newPosition
+            @RequestBody @Valid PositionUpdateDto newPosition
     ) {
         log.info("Updating position ID: {}", positionId);
         var updated = positionService.updatePosition(positionId, newPosition);
@@ -89,10 +85,10 @@ public class PositionController {
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     public ResponseEntity<?> addPositionRequirement(
             @PathVariable Integer positionId,
-            @RequestBody @Valid PositionRequirementDto newPositionRequirement
+            @RequestBody @Valid PositionRequirementCreateDto newPositionRequirement
     ) {
         log.info("Adding new requirement to position ID: {}", positionId);
-        var result = positionRequirementService.addPositionRequirement(positionId, newPositionRequirement);
+        var result = positionService.addPositionRequirement(positionId, newPositionRequirement);
         log.info("Requirement added successfully to position ID: {}", positionId);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
@@ -104,7 +100,7 @@ public class PositionController {
             @PathVariable Integer positionRequirementId
     ) {
         log.info("Deleting requirement ID: {} for position ID: {}", positionRequirementId, positionId);
-        positionRequirementService.removePositionRequirement(positionRequirementId);
+        positionService.removePositionRequirement(positionRequirementId);
         log.info("Deleted requirement successfully with ID: {}", positionRequirementId);
         return new ResponseEntity<>("Position Requirement With positionRequirementId : " + positionRequirementId + " Deleted !", HttpStatus.OK);
     }
@@ -114,19 +110,57 @@ public class PositionController {
     public ResponseEntity<?> updatePositionRequirement(
             @PathVariable Integer positionId,
             @PathVariable Integer positionRequirementId,
-            @RequestBody @Valid PositionRequirementDto newPositionRequirement
+            @RequestBody @Valid PositionRequirementUpdateDto newPositionRequirement
     ) {
         log.info("Updating requirement ID: {} for position ID: {}", positionRequirementId, positionId);
-        var updated = positionRequirementService.updatePositionRequirement(positionRequirementId, newPositionRequirement);
+        var updated = positionService.updatePositionRequirement(positionRequirementId, newPositionRequirement);
         log.info("Updated requirement successfully with ID: {}", positionRequirementId);
         return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
+
+    @PatchMapping("/{positionId}/rounds/{positionRoundId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    public ResponseEntity<?> updatePositionRound(
+            @PathVariable Integer positionId,
+            @PathVariable Integer positionRoundId,
+            @RequestBody @Valid PositionRoundUpdateDto positionRound
+    ) {
+        log.info("Updating Round ID: {} for position ID: {}", positionRoundId, positionId);
+        var updated = positionService.changeRound(positionRoundId,positionRound);
+        log.info("Updated Round successfully with ID: {}", positionRoundId);
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{positionId}/rounds")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    public ResponseEntity<?> addPositionRound(
+            @PathVariable Integer positionId,
+            @RequestBody @Valid PositionRoundCreateDto positionRound
+    ) {
+        log.info("Add Round for position ID: {}", positionId);
+        var updated = positionService.addRound(positionId,positionRound);
+        log.info("Round Added successfully For PositionID: {}", updated.getPositionId());
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{positionId}/rounds/{positionRoundId}")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    public ResponseEntity<?> deletePositionRound(
+            @PathVariable Integer positionId,
+            @PathVariable Integer positionRoundId
+    ) {
+        log.info("Deleting Round ID: {} for position ID: {}", positionRoundId, positionId);
+        positionService.deleteRound(positionRoundId);
+        log.info("Deleted Round successfully with ID: {}", positionRoundId);
+        return new ResponseEntity<>("Position Requirement With positionRequirementId : " + positionRoundId + " Deleted !", HttpStatus.OK);
     }
 
     @PatchMapping("/{positionId}/educations")
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
     public ResponseEntity<?> updatePositionEducation(
             @PathVariable Integer positionId,
-            @RequestBody List<DegreeDto> positionRequiredEducation
+            @RequestBody List<DegreeGetDto> positionRequiredEducation
     ) {
         log.info("Updating education requirements for position ID: {}", positionId);
         var result = positionService.changeEducation(positionId, positionRequiredEducation);
@@ -140,11 +174,11 @@ public class PositionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "positionRequirementId") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
+            @RequestParam(defaultValue = "desc") String sortDir
     ) {
         log.info("Fetching requirements for position ID: {} (page: {}, size: {}, sortBy: {}, sortDir: {})",
                 positionId, page, size, sortBy, sortDir);
-        var result = positionRequirementService.getPositionRequirements(positionId, page, size, sortBy, sortDir);
+        var result = positionService.getPositionRequirements(positionId, page, size, sortBy, sortDir);
         log.info("Fetched {} requirements for position ID: {}", result.getData().size(), positionId);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }

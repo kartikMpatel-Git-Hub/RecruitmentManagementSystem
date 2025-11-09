@@ -2,6 +2,8 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.*;
@@ -31,17 +33,20 @@ public class PositionService implements PositionServiceInterface {
     private final AuthService authService;
     private final SkillRepository skillRepository;
     private final PositionRequirementRepository positionRequirementRepository;
+    private final PositionRoundRepository positionRoundRepository;
     private final DegreeRepository degreeRepository;
 
     @Override
     @Transactional
     @Caching(evict = {@CacheEvict(value = "positionData", allEntries = true)})
-    public PositionDto addPosition(PositionDto newPosition) {
+    public PositionResponseDto addPosition(PositionCreateDto newPosition) {
         logger.info("Attempting to add a new position: {}", newPosition.getPositionTitle());
+
         PositionStatusModel positionStatus = new PositionStatusModel();
         positionStatus.setPositionStatus(newPosition.getPositionStatus().getStatus());
         positionStatus.setPositionStatusReason(newPosition.getPositionStatus().getPositionStatusReason());
         logger.debug("Position status created: {}", newPosition.getPositionStatus().getStatus());
+
 
         UserModel currentUser = authService.getCurrentUser();
         logger.debug("Current user creating position: {}", currentUser.getUserId());
@@ -59,6 +64,18 @@ public class PositionService implements PositionServiceInterface {
         position.setPositionLanguage(newPosition.getPositionLanguage());
 
         PositionModel savedPosition = positionRepository.save(position);
+
+        List<PositionRoundModel> positionRound = new ArrayList<>();
+        newPosition.getPositionRounds().forEach(round -> {
+            PositionRoundModel newRound = new PositionRoundModel();
+            newRound.setPosition(savedPosition);
+            newRound.setPositionRoundExpectedDate(round.getPositionRoundExpectedDate());
+            newRound.setPositionRoundExpectedTime(round.getPositionRoundExpectedTime());
+            newRound.setPositionRoundType(round.getPositionRoundType());
+            newRound.setPositionRoundSequence(round.getPositionRoundSequence());
+            positionRound.add(positionRoundRepository.save(newRound));
+        });
+        position.setPositionRounds(positionRound);
         logger.info("Position created successfully with ID: {}", savedPosition.getPositionId());
 
         List<PositionRequirementModel> requirements = new ArrayList<>();
@@ -76,11 +93,13 @@ public class PositionService implements PositionServiceInterface {
             PositionRequirementModel savedRequirement = positionRequirementRepository.save(newRequirement);
             requirements.add(savedRequirement);
         });
+        position.setPositionRequirements(requirements);
+
         logger.debug("Position requirements added successfully for position ID: {}", savedPosition.getPositionId());
 
         List<DegreeModel> education = newPosition.getPositionRequiredEducations().stream().map(
                 degree -> degreeRepository.findById(degree.getDegreeId()).orElseThrow(() -> {
-                    logger.error("Degree not found: {}", degree.getDegreeId());
+                    logger.error("Degree not found : {}", degree.getDegreeId());
                     return new ResourceNotFoundException("Degree", "degreeId", degree.getDegreeId().toString());
                 })
         ).toList();
@@ -93,7 +112,7 @@ public class PositionService implements PositionServiceInterface {
 
     @Override
     @Caching(evict = {@CacheEvict(value = "positionData", allEntries = true)})
-    public PositionDto updatePosition(Integer positionId, PositionDto newPosition) {
+    public PositionResponseDto updatePosition(Integer positionId, PositionUpdateDto newPosition) {
         logger.info("Attempting to update position with ID: {}", positionId);
         PositionModel oldPosition = positionRepository.findById(positionId).orElseThrow(() -> {
             logger.error("Position not found for ID: {}", positionId);
@@ -120,7 +139,7 @@ public class PositionService implements PositionServiceInterface {
 
     @Override
     @Cacheable(value = "positionData", key = "'positionId_'+#positionId")
-    public PositionDto getPosition(Integer positionId) {
+    public PositionResponseDto getPosition(Integer positionId) {
         logger.debug("Fetching position with ID: {}", positionId);
         PositionModel position = positionRepository.findById(positionId).orElseThrow(() -> {
             logger.error("Position not found with ID: {}", positionId);
@@ -144,7 +163,7 @@ public class PositionService implements PositionServiceInterface {
 
     @Override
     @Caching(evict = {@CacheEvict(value = "positionData", allEntries = true)})
-    public PositionDto changeEducation(Integer positionId, List<DegreeDto> positionEducation) {
+    public PositionResponseDto changeEducation(Integer positionId, List<DegreeGetDto> positionEducation) {
         logger.info("Changing education for position ID: {}", positionId);
         PositionModel existingPosition = positionRepository.findById(positionId)
                 .orElseThrow(() -> {
@@ -169,8 +188,111 @@ public class PositionService implements PositionServiceInterface {
     }
 
     @Override
+    @Caching(evict = {@CacheEvict(value = "positionData", allEntries = true)})
+    public PositionRoundResponseDto changeRound(Integer positionId, PositionRoundUpdateDto positionRound) {
+
+        PositionRoundModel existingPositionRound = positionRoundRepository.findById(positionId).orElseThrow(
+                ()->new ResourceNotFoundException("PositionRound","positionRoundId",positionId.toString())
+        );
+
+        if(positionRound.getPositionRoundType() != null){
+            existingPositionRound.setPositionRoundType(positionRound.getPositionRoundType());
+            existingPositionRound.setPositionRoundSequence(positionRound.getPositionRoundSequence());
+        }
+        if(positionRound.getPositionRoundExpectedDate() != null){
+            existingPositionRound.setPositionRoundExpectedDate(positionRound.getPositionRoundExpectedDate());
+        }
+        if(positionRound.getPositionRoundExpectedTime() != null){
+            existingPositionRound.setPositionRoundExpectedTime(positionRound.getPositionRoundExpectedTime());
+        }
+
+        return convertor(positionRoundRepository.save(existingPositionRound));
+    }
+
+    @Override
+    @Caching(evict = {@CacheEvict(value = "positionData", allEntries = true)})
+    public void deleteRound(Integer positionId) {
+
+        PositionRoundModel existingPositionRound = positionRoundRepository.findById(positionId).orElseThrow(
+                ()->new ResourceNotFoundException("PositionRound","positionRoundId",positionId.toString())
+        );
+        positionRoundRepository.delete(existingPositionRound);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "positionData",allEntries = true)
+    })
+    public PositionRequirementResponseDto addPositionRequirement(Integer positionId, PositionRequirementCreateDto newRequirement) {
+        logger.info("Adding new position requirement for positionId: {}", positionId);
+        PositionModel position = positionRepository.findById(positionId).orElseThrow(
+                ()->new ResourceNotFoundException("Position","positionId",positionId.toString())
+        );
+        SkillModel skill = skillRepository.findById(newRequirement.getPositionSkill().getSkillId()).orElseThrow(
+                ()->new ResourceNotFoundException("Skill","skillId",newRequirement.getPositionSkill().getSkillId().toString())
+        );
+        PositionRequirementModel requirement = new PositionRequirementModel();
+        requirement.setPositionRequirement(newRequirement.getPositionRequirement());
+        requirement.setPositionRequiredSkill(skill);
+        requirement.setPosition(position);
+
+        positionRequirementRepository.save(requirement);
+        logger.info("Position requirement added successfully for positionId: {} with skillId: {}", positionId, skill.getSkillId());
+        return convertor(requirement);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "positionData",allEntries = true)
+    })
+    public PositionRequirementResponseDto updatePositionRequirement(Integer positionRequirementId, PositionRequirementUpdateDto newPosition) {
+        logger.info("Updating position requirement with ID: {}", positionRequirementId);
+        PositionRequirementModel positionRequirement = positionRequirementRepository.findById(positionRequirementId).orElseThrow(
+                ()->new ResourceNotFoundException("PositionRequirement","PositionRequirementId",positionRequirementId.toString())
+        );
+
+        if(newPosition.getPositionRequirement() != null){
+            positionRequirement.setPositionRequirement(newPosition.getPositionRequirement());
+        }
+        if(newPosition.getPositionSkill() != null && newPosition.getPositionSkill().getSkillId() != null){
+            SkillModel newSkill = skillRepository.findById(newPosition.getPositionSkill().getSkillId()).orElseThrow(
+                    ()->new ResourceNotFoundException("Skill","skillId",newPosition.getPositionSkill().getSkillId().toString())
+            );
+            positionRequirement.setPositionRequiredSkill(newSkill);
+        }
+        PositionRequirementModel updatedPositionRequirement = positionRequirementRepository.save(positionRequirement);
+        logger.info("Position requirement updated successfully with ID: {}", updatedPositionRequirement.getPositionRequirementId());
+        return convertor(updatedPositionRequirement);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "positionData",allEntries = true)
+    })
+    public void removePositionRequirement(Integer positionRequirementId) {
+        logger.info("Removing position requirement with ID: {}", positionRequirementId);
+        PositionRequirementModel position = positionRequirementRepository.findById(positionRequirementId).orElseThrow(
+                ()->new ResourceNotFoundException("PositionRequirement","positionRequirementId",positionRequirementId.toString())
+        );
+        positionRequirementRepository.delete(position);
+        logger.info("Position requirement deleted successfully with ID: {}", positionRequirementId);
+    }
+
+    @Override
+    @Cacheable(value = "positionData",key = "'positionRequirement_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<PositionRequirementResponseDto> getPositionRequirements(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching position requirements for positionId: {}, page: {}, size: {}, sortBy: {}, sortDir: {}", positionId, page, size, sortBy, sortDir);
+        PaginatedResponse<PositionRequirementResponseDto> response = getPaginatedPositionRequirement(positionRequirementRepository.findAll(getPageable(page, size, sortBy, sortDir)));
+        logger.info("Fetched {} position requirements", response.getData().size());
+        return response;
+    }
+
+    @Override
     @Cacheable(value = "positionData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<PositionDto> getAllPositions(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<PositionResponseDto> getAllPositions(Integer page, Integer size, String sortBy, String sortDir) {
         logger.debug("Fetching all positions page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
         return getPaginatedPosition(positionRepository.findAll(getPageable(page, size, sortBy, sortDir)));
     }
@@ -184,9 +306,37 @@ public class PositionService implements PositionServiceInterface {
         return count;
     }
 
-    private PaginatedResponse<PositionDto> getPaginatedPosition(Page<PositionModel> pageResponse) {
+    @Override
+    @Caching(evict = {@CacheEvict(value = "positionData", allEntries = true)})
+    public PositionResponseDto addRound(Integer positionId, PositionRoundCreateDto positionRound) {
+        PositionModel existingPosition = positionRepository.findById(positionId).orElseThrow(
+                ()->new ResourceNotFoundException("Position","positionId",positionId.toString())
+        );
+
+        PositionRoundModel newPositionRound = new PositionRoundModel();
+        newPositionRound.setPositionRoundType(positionRound.getPositionRoundType());
+        newPositionRound.setPositionRoundSequence(positionRound.getPositionRoundSequence());
+        newPositionRound.setPosition(existingPosition);
+
+        existingPosition.getPositionRounds().add(positionRoundRepository.save(newPositionRound));
+
+        return converter(existingPosition);
+    }
+
+    private PaginatedResponse<PositionRequirementResponseDto> getPaginatedPositionRequirement(Page<PositionRequirementModel> pageResponse) {
+        PaginatedResponse<PositionRequirementResponseDto> response = new PaginatedResponse<>();
+        response.setData(pageResponse.getContent().stream().map(this::convertor).toList());
+        response.setCurrentPage(pageResponse.getNumber());
+        response.setLast(pageResponse.isLast());
+        response.setPageSize(pageResponse.getSize());
+        response.setTotalItems(pageResponse.getTotalElements());
+        response.setTotalPages(pageResponse.getTotalPages());
+        return response;
+    }
+
+    private PaginatedResponse<PositionResponseDto> getPaginatedPosition(Page<PositionModel> pageResponse) {
         logger.debug("Building paginated response for {} positions", pageResponse.getContent().size());
-        PaginatedResponse<PositionDto> response = new PaginatedResponse<>();
+        PaginatedResponse<PositionResponseDto> response = new PaginatedResponse<>();
         response.setData(pageResponse.getContent().stream().map(this::converter).toList());
         response.setCurrentPage(pageResponse.getNumber());
         response.setLast(pageResponse.isLast());
@@ -205,9 +355,9 @@ public class PositionService implements PositionServiceInterface {
         return PageRequest.of(page, size, sort);
     }
 
-    private PositionDto converter(PositionModel entity) {
+    private PositionResponseDto converter(PositionModel entity) {
         logger.trace("Converting PositionModel to DTO for ID: {}", entity.getPositionId());
-        PositionDto dto = new PositionDto();
+        PositionResponseDto dto = new PositionResponseDto();
         dto.setPositionId(entity.getPositionId());
         dto.setPositionTitle(entity.getPositionTitle());
         dto.setPositionDescription(entity.getPositionDescription());
@@ -217,46 +367,69 @@ public class PositionService implements PositionServiceInterface {
         dto.setPositionType(entity.getPositionType());
         dto.setPositionSalary(entity.getPositionSalary());
         dto.setPositionLanguage(entity.getPositionLanguage());
-        dto.setPositionApplications(entity.getPositionApplications().size());
+        int applications = 0;
+        if(entity.getPositionApplications() != null) {
+            applications = entity.getPositionApplications().size();
+        }
+        dto.setPositionApplications(applications);
 
-        dto.setCreatedById(entity.getCreatedBy().getUserId());
-        dto.setCreatedByName(entity.getCreatedBy().getUsername());
+        dto.setCreatedBy(converter(entity.getCreatedBy()));
 
-        PositionStatusDto positionStatus = new PositionStatusDto();
-        positionStatus.setPositionStatusId(entity.getPositionStatus().getPositionStatusId());
-        positionStatus.setStatus(entity.getPositionStatus().getPositionStatus());
-        positionStatus.setPositionStatusReason(entity.getPositionStatus().getPositionStatusReason());
-        dto.setPositionStatus(positionStatus);
 
-        List<PositionRequirementDto> requirements = new ArrayList<>();
-        entity.getPositionRequirements().forEach(requirement -> requirements.add(convertor(requirement)));
-        dto.setPositionRequirements(requirements);
+        dto.setPositionStatus(getPositionStatus(entity.getPositionStatus()));
+
+        dto.setPositionRequirements(entity.getPositionRequirements() != null ? entity.getPositionRequirements().stream().map(this::convertor).toList() : null);
         dto.setPositionRequiredEducations(entity.getPositionRequiredEducations().stream().map(this::convertor).toList());
+        dto.setPositionRounds(entity.getPositionRounds().stream().map(this::convertor).toList());
+
+        return dto;
+    }
+    private PositionStatusResponseDto getPositionStatus(PositionStatusModel entity){
+        PositionStatusResponseDto positionStatus = new PositionStatusResponseDto();
+        positionStatus.setPositionStatusId(entity.getPositionStatusId());
+        positionStatus.setStatus(entity.getPositionStatus());
+        positionStatus.setPositionStatusReason(entity.getPositionStatusReason());
+        return positionStatus;
+    }
+    private UserResponseDto converter(UserModel entity) {
+        UserResponseDto dto = new UserResponseDto();
+        dto.setUserId(entity.getUserId());
+        dto.setUserName(entity.getUsername());
+        dto.setUserEmail(entity.getUserEmail());
+        dto.setUserImageUrl(entity.getUserImageUrl());
         return dto;
     }
 
-    private PositionRequirementDto convertor(PositionRequirementModel entity) {
-        PositionRequirementDto dto = new PositionRequirementDto();
+    private PositionRequirementResponseDto convertor(PositionRequirementModel entity) {
+        PositionRequirementResponseDto dto = new PositionRequirementResponseDto();
         dto.setPositionRequirementId(entity.getPositionRequirementId());
         dto.setPosition(entity.getPosition().getPositionId());
 
-        SkillDto skill = new SkillDto();
+        SkillResponseDto skill = new SkillResponseDto();
         skill.setSkillId(entity.getPositionRequiredSkill().getSkillId());
         skill.setSkill(entity.getPositionRequiredSkill().getSkill());
-        skill.setCreatedAt(entity.getPositionRequiredSkill().getCreatedAt());
-        skill.setUpdatedAt(entity.getPositionRequiredSkill().getUpdatedAt());
         dto.setPositionSkill(skill);
         dto.setPositionRequirement(entity.getPositionRequirement());
         return dto;
     }
 
-    private DegreeDto convertor(DegreeModel entity) {
-        DegreeDto dto = new DegreeDto();
+    private DegreeResponseDto convertor(DegreeModel entity) {
+        DegreeResponseDto dto = new DegreeResponseDto();
         dto.setDegreeId(entity.getDegreeId());
         dto.setDegree(entity.getDegree());
         dto.setStream(entity.getStream());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
+        return dto;
+    }
+
+    private PositionRoundResponseDto convertor(PositionRoundModel entity){
+        PositionRoundResponseDto dto = new PositionRoundResponseDto();
+
+        dto.setPositionRoundId(entity.getPositionRoundId());
+        dto.setPositionRoundType(entity.getPositionRoundType());
+        dto.setPositionRoundSequence(entity.getPositionRoundSequence());
+        dto.setPositionRoundExpectedDate(entity.getPositionRoundExpectedDate());
+        dto.setPositionRoundExpectedTime(entity.getPositionRoundExpectedTime());
+
         return dto;
     }
 }

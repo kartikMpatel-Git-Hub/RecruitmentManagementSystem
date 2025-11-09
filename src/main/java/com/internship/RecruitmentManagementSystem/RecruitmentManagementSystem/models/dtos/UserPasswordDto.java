@@ -10,6 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class UserPasswordDto {
 
     @NotEmpty(message = "Current Password Can't Be Empty !!")

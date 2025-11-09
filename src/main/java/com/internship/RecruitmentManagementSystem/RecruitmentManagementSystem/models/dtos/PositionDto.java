@@ -1,5 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.PositionRoundCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.PositionType;
 import lombok.*;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@Deprecated
 public class PositionDto {
 
     private Integer positionId;
@@ -42,4 +44,6 @@ public class PositionDto {
     private Integer createdById;
 
     private String createdByName;
+
+    private List<PositionRoundCreateDto> positionRounds;
 }

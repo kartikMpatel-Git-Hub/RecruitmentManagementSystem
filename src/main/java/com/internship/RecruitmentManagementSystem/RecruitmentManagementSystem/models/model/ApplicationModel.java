@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "tbl_application",indexes = {
         @Index(name = "idx_application_id", columnList = "application_id"),
@@ -37,5 +40,10 @@ public class ApplicationModel extends BaseEntity {
     @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     @JoinColumn(name = "application_status_id", referencedColumnName = "application_status_id")
     private ApplicationStatusModel applicationStatus;
+
+    private Boolean isShortlisted;
+
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoundModel> rounds = new ArrayList<>();
 
 }

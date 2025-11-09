@@ -5,10 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class ShortlistedApplicationDto {
 
     private Integer shortlistedApplicationId;
@@ -17,4 +20,5 @@ public class ShortlistedApplicationDto {
 
     private ShortlistedApplicationStatusDto shortlistedApplicationStatus;
 
+    private List<RoundDto> rounds;
 }

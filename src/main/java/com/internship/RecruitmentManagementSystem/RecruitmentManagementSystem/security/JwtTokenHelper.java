@@ -2,6 +2,7 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -67,7 +68,7 @@ public class JwtTokenHelper {
 
     public String generateToken(UserDetails userDetails){
         Map<String,Object> claims = new HashMap<>();
-        UserDto user = userService.getUserByUserName(userDetails.getUsername());
+        UserResponseDto user = userService.getUserByUserName(userDetails.getUsername());
         claims.put("userType",user.getRole().getRole());
         claims.put("userEmail",user.getUserEmail());
         claims.put("userName",userDetails.getUsername());

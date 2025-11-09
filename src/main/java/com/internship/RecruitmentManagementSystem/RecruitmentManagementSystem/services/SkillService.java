@@ -2,11 +2,14 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.SkillDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.SkillCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.SkillUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.SkillResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.SkillModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.SkillRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.SkillServiceInterface;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,27 +20,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
-public class SkillService implements SkillServiceInterface {
+@RequiredArgsConstructor
+
+public class SkillService implements SkillServiceInterface
+{
 
     private static final Logger logger = LoggerFactory.getLogger(SkillService.class);
 
     private final SkillRepository skillRepository;
     private final ModelMapper modelMapper;
 
-    public SkillService(SkillRepository skillRepository, ModelMapper modelMapper) {
-        this.skillRepository = skillRepository;
-        this.modelMapper = modelMapper;
-    }
-
     @Override
     @CacheEvict(value = "skillData", allEntries = true)
-    public SkillDto addSkill(SkillDto skillDto) {
+    public SkillResponseDto addSkill(SkillCreateDto skillDto) {
         logger.info("Attempting to add new skill: {}", skillDto.getSkill());
 
         if (skillRepository.existsBySkill(skillDto.getSkill())) {
@@ -51,14 +49,14 @@ public class SkillService implements SkillServiceInterface {
         return convertor(savedSkill);
     }
 
-    @Override
-    public SkillModel addSkillModel(SkillDto skillDto) {
-        return convertor(skillDto);
-    }
+//    @Override
+//    public SkillModel addSkillModel(SkillCreateDto skillDto) {
+//        return convertor(skillDto);
+//    }
 
     @Override
     @Cacheable(value = "userSkill",key = "'id_'+#skillId")
-    public SkillDto getSkill(Integer skillId) {
+    public SkillResponseDto getSkill(Integer skillId) {
         logger.info("Fetching skill with ID: {}", skillId);
 
         SkillModel skill = skillRepository.findById(skillId)
@@ -87,7 +85,7 @@ public class SkillService implements SkillServiceInterface {
 
     @Override
     @Cacheable(value = "skillData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<SkillDto> getSkills(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<SkillResponseDto> getSkills(Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching paginated skills - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
@@ -97,7 +95,7 @@ public class SkillService implements SkillServiceInterface {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<SkillModel> pageResponse = skillRepository.findAll(pageable);
 
-        PaginatedResponse<SkillDto> response = new PaginatedResponse<>();
+        PaginatedResponse<SkillResponseDto> response = new PaginatedResponse<>();
         response.setData(pageResponse.getContent().stream().map(this::convertor).toList());
         response.setCurrentPage(pageResponse.getNumber());
         response.setLast(pageResponse.isLast());
@@ -114,7 +112,7 @@ public class SkillService implements SkillServiceInterface {
             @CacheEvict(value = "skillData",allEntries = true),
             @CacheEvict(value = "userSkill",allEntries = true)
     })
-    public SkillDto updateSkill(SkillDto newSkill, Integer skillId) {
+    public SkillResponseDto updateSkill(SkillUpdateDto newSkill, Integer skillId) {
         logger.info("Updating skill with ID: {}", skillId);
         SkillModel Skill = getBySkill(newSkill.getSkill());
         if (Skill != null && !Skill.getSkillId().equals(skillId)) {
@@ -171,11 +169,11 @@ public class SkillService implements SkillServiceInterface {
         return skill;
     }
 
-    private SkillDto convertor(SkillModel skill) {
-        return modelMapper.map(skill, SkillDto.class);
+    private SkillResponseDto convertor(SkillModel skill) {
+        return modelMapper.map(skill, SkillResponseDto.class);
     }
 
-    private SkillModel convertor(SkillDto skill) {
+    private SkillModel convertor(SkillCreateDto skill) {
         return modelMapper.map(skill, SkillModel.class);
     }
 }
