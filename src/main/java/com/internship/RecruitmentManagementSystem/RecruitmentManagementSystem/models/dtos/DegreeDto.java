@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class DegreeDto {
 
     private Integer degreeId;

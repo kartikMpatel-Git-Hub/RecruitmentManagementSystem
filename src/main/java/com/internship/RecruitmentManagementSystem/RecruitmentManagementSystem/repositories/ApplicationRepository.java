@@ -19,6 +19,11 @@ public interface ApplicationRepository extends JpaRepository<ApplicationModel,In
     @Query(value = "SELECT position_id FROM tbl_application WHERE candidate_id = :candidateId",nativeQuery = true)
     List<Integer> findAppliedPositionIdsByCandidateId(@Param("candidateId") Integer candidateId);
 
+    Page<ApplicationModel> findByIsShortlistedTrueAndCandidateCandidateId(Integer candidateId,Pageable pageable);
+    Page<ApplicationModel> findByIsShortlistedTrueAndPositionPositionId(Integer positionId,Pageable pageable);
+
+    Page<ApplicationModel> findByIsShortlistedTrue(Pageable pageable);
+
     Page<ApplicationModel> findByCandidateCandidateId(Integer candidateId, Pageable pageable);
     Page<ApplicationModel> findByPositionPositionId(Integer positionId, Pageable pageable);
 }

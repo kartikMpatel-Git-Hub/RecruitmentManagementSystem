@@ -1,22 +1,30 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ApplicationDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ApplicationStatusDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.ApplicationResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.ApplicationStatusResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
 import java.util.List;
 
 public interface ApplicationServiceInterface {
 
-    ApplicationDto addApplication(ApplicationDto newApplication);
+    ApplicationResponseDto addApplication(ApplicationCreateDto newApplication);
 
-    ApplicationDto updateApplication(Integer applicationId,ApplicationDto newApplication);
+    void shortlistApplication(Integer applicationId);
 
-    ApplicationStatusDto updateApplicationStatus(Integer applicationId,Integer applicationStatusId, ApplicationStatusDto newApplicationStatus);
+    PaginatedResponse<ApplicationResponseDto> getAllShortlistedApplications(Integer page,Integer size,String sortBy,String sortDir);
 
-    ApplicationDto getApplication(Integer applicationId);
+    PaginatedResponse<ApplicationResponseDto> getPositionShortlistedApplications(Integer positionId,Integer page,Integer size,String sortBy,String sortDir);
 
-    PaginatedResponse<ApplicationDto> getAllApplications(Integer page,Integer size,String sortBy,String sortDir);
+    PaginatedResponse<ApplicationResponseDto> getCandidateShortlistedApplications(Integer candidateId,Integer page,Integer size,String sortBy,String sortDir);
+
+    ApplicationStatusResponseDto updateApplicationStatus(Integer applicationId, Integer applicationStatusId, ApplicationStatusUpdateDto newApplicationStatus);
+
+    ApplicationResponseDto getApplication(Integer applicationId);
+
+    PaginatedResponse<ApplicationResponseDto> getAllApplications(Integer page,Integer size,String sortBy,String sortDir);
 
     List<Integer> getCandidateApplicationId(Integer candidateId);
 
@@ -24,7 +32,7 @@ public interface ApplicationServiceInterface {
 
     Long countTotalApplications();
 
-    PaginatedResponse<ApplicationDto> getCandidateApplications(Integer candidateId,Integer page,Integer size,String sortBy,String sortDir);
+    PaginatedResponse<ApplicationResponseDto> getCandidateApplications(Integer candidateId,Integer page,Integer size,String sortBy,String sortDir);
 
-    PaginatedResponse<ApplicationDto> getPositionApplications(Integer positionId,Integer page,Integer size,String sortBy,String sortDir);
+    PaginatedResponse<ApplicationResponseDto> getPositionApplications(Integer positionId,Integer page,Integer size,String sortBy,String sortDir);
 }

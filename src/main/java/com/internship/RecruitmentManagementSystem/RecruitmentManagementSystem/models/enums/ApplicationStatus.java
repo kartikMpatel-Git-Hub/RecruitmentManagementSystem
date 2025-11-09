@@ -5,5 +5,6 @@ public enum ApplicationStatus {
     ACCEPTED,
     REJECTED,
     ONHOLD,
-    UNDERPROCESS
+    UNDERPROCESS,
+    SHORTLISTED
 }

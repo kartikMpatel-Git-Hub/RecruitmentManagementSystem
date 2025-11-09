@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class CandidateEducationDto {
 
     Integer candidateEducationId;

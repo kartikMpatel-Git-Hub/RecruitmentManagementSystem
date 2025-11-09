@@ -2,8 +2,15 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.ApplicationResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.ApplicationStatusResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundStatusResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ApplicationStatus;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ShortlistedApplicationStaus;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundResult;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.*;
@@ -34,8 +41,8 @@ public class ApplicationService implements ApplicationServiceInterface {
     private final PositionRepository positionRepository;
     private final ApplicationStatusRepository applicationStatusRepository;
     private final CandidateRepository candidateRepository;
-    private final ShortlistedApplicationRepository shortlistedApplicationRepository;
-    private final ShortlistedApplicationStatusRepository shortlistedApplicationStatusRepository;
+    private final RoundRepository roundRepository;
+    private final RoundStatusRepository roundStatusRepository;
 
     @Override
     @Transactional
@@ -43,7 +50,7 @@ public class ApplicationService implements ApplicationServiceInterface {
             @CacheEvict(value = "applicationData",allEntries = true),
             @CacheEvict(value = "positionData",allEntries = true),
     })
-    public ApplicationDto addApplication(ApplicationDto newApplication) {
+    public ApplicationResponseDto addApplication(ApplicationCreateDto newApplication) {
         logger.info("Adding new application for positionId: {}", newApplication.getPositionId());
         PositionModel position = positionRepository.findById(newApplication.getPositionId()).orElseThrow(
                 ()->new ResourceNotFoundException("Position","positionId",newApplication.getPositionId().toString())
@@ -62,50 +69,81 @@ public class ApplicationService implements ApplicationServiceInterface {
         ApplicationModel application = new ApplicationModel();
         application.setPosition(position);
         application.setCandidate(candidate);
+        application.setIsShortlisted(false);
         application.setApplicationStatus(savedApplicationStatus);
 
         ApplicationModel savedApplication = applicationRepository.save(application);
         logger.info("Application added successfully with ID: {}", savedApplication.getApplicationId());
-        return converter(savedApplication);
+        return converter(savedApplication,false);
     }
 
     @Override
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "applicationData",allEntries = true),
-            @CacheEvict(value = "shortlistedApplicationData",allEntries = true)
     })
-    public ApplicationDto updateApplication(Integer applicationId, ApplicationDto newApplication) {
-        logger.info("Updating application with ID: {}", applicationId);
-        ApplicationModel existingApplication = applicationRepository.findById(applicationId).orElseThrow(
+    public void shortlistApplication(Integer applicationId) {
+        ApplicationModel application = applicationRepository.findById(applicationId).orElseThrow(
                 ()->new ResourceNotFoundException("Application","applicationId",applicationId.toString())
         );
 
-        if(newApplication.getPositionId() != null){
-            PositionModel newPosition = positionRepository.findById(newApplication.getPositionId()).orElseThrow(
-                    ()->new ResourceNotFoundException("Position","positionId",newApplication.getPositionId().toString())
-            );
-            existingApplication.setPosition(newPosition);
-        }
-        if(newApplication.getCandidateId() != null){
-            CandidateModel candidate = candidateRepository.findById(newApplication.getCandidateId()).orElseThrow(
-                    ()->new ResourceNotFoundException("Candidate","candidateId",newApplication.getCandidateId().toString())
-            );
-            existingApplication.setCandidate(candidate);
-        }
-        if(newApplication.getApplicationStatus() != null && newApplication.getApplicationStatus().getApplicationStatus() != null){
-            if (newApplication.getApplicationStatus().getApplicationStatus().equals(ApplicationStatus.valueOf("ACCEPTED"))){
-                shortListApplication(applicationId);
-            }
-            existingApplication.getApplicationStatus().setApplicationStatus(newApplication.getApplicationStatus().getApplicationStatus());
-        }
-        if(newApplication.getApplicationStatus() != null && newApplication.getApplicationStatus().getApplicationFeedback() != null){
-            existingApplication.getApplicationStatus().setApplicationFeedback(newApplication.getApplicationStatus().getApplicationFeedback());
-        }
+        ApplicationStatusModel applicationStatus = application.getApplicationStatus();
+        applicationStatus.setApplicationStatus(ApplicationStatus.valueOf("SHORTLISTED"));
+        applicationStatus.setApplicationFeedback("Your Application Is Shortlisted For Next Round !");
+        application.setApplicationStatus(applicationStatus);
+        application.setIsShortlisted(true);
 
-        ApplicationModel updatedApplication = applicationRepository.save(existingApplication);
-        logger.info("Application updated successfully with ID: {}", updatedApplication.getApplicationId());
-        return converter(updatedApplication);
+        application.getPosition().getPositionRounds().forEach(
+                round -> {
+                    RoundStatusModel roundStatus = new RoundStatusModel();
+                    roundStatus.setRating(null);
+                    roundStatus.setRoundFeedback("Your Round Will Schedule Soon !");
+                    roundStatus.setRoundStatus(RoundStatus.UNDERPROCESS);
+
+                    RoundModel newRound = new RoundModel();
+                    newRound.setApplication(application);
+                    newRound.setRoundSequence(round.getPositionRoundSequence());
+                    newRound.setRoundType(round.getPositionRoundType());
+                    newRound.setRoundResult(RoundResult.valueOf("PENDING"));
+                    newRound.setRoundExpectedTime(round.getPositionRoundExpectedTime());
+                    newRound.setRoundDate(round.getPositionRoundExpectedDate());
+                    newRound.setRoundStatus(roundStatusRepository.save(roundStatus));
+
+                    roundRepository.save(newRound);
+                }
+        );
+
+        applicationRepository.save(application);
+    }
+
+    @Override
+    @Cacheable(value = "applicationData",key = "'shortlisted_applications_page_'+#page+'_size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getAllShortlistedApplications(Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Shortlisted applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findByIsShortlistedTrue(getPageable(page, size, sortBy, sortDir)),true);
+        logger.info("Fetched {} Shortlisted applications ", response.getData().size());
+        return response;
+    }
+
+    @Override
+    @Cacheable(value = "applicationData",key = "'shortlisted_applications_position_'+#positionId+'_page_'+#page+'_size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getPositionShortlistedApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Shortlisted applications Of Position : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
+                applicationRepository.findByIsShortlistedTrueAndPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)),true);
+        logger.info("Fetched {} Shortlisted applications of PositionId : {} ", response.getData().size(),positionId);
+        return response;
+    }
+
+    @Override
+    @Cacheable(value = "applicationData",key = "'shortlisted_applications_candidate_+'#candidateId'+_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getCandidateShortlistedApplications(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Shortlisted applications Of Candidate : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",candidateId, page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
+                applicationRepository.findByIsShortlistedTrueAndCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)),true);
+        logger.info("Fetched {} Shortlisted applications of CandidateId : {} ", response.getData().size(),candidateId);
+        return response;
     }
 
     @Override
@@ -113,7 +151,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     @Caching(evict = {
             @CacheEvict(value = "applicationData",allEntries = true)
     })
-    public ApplicationStatusDto updateApplicationStatus(Integer applicationId,Integer applicationStatusId, ApplicationStatusDto newApplicationStatus) {
+    public ApplicationStatusResponseDto updateApplicationStatus(Integer applicationId,Integer applicationStatusId, ApplicationStatusUpdateDto newApplicationStatus) {
         ApplicationStatusModel existingApplicationStatus = applicationStatusRepository.findById(applicationStatusId).orElseThrow(
                 ()->new ResourceNotFoundException("ApplicationStatus","applicationStatusId",applicationStatusId.toString())
         );
@@ -131,20 +169,21 @@ public class ApplicationService implements ApplicationServiceInterface {
 
     @Override
     @Cacheable(value = "applicationData",key = "'application_id_'+#applicationId")
-    public ApplicationDto getApplication(Integer applicationId) {
+    public ApplicationResponseDto getApplication(Integer applicationId) {
         logger.info("Fetching application with ID: {}", applicationId);
         ApplicationModel application = applicationRepository.findById(applicationId).orElseThrow(
                 () -> new ResourceNotFoundException("Application","applicationId",applicationId.toString())
         );
         logger.info("Fetched application successfully for ID: {}", applicationId);
-        return converter(application);
+        return converter(application,false);
     }
 
     @Override
     @Cacheable(value = "applicationData",key = "'applications_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<ApplicationDto> getAllApplications(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<ApplicationResponseDto> getAllApplications(Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
-        PaginatedResponse<ApplicationDto> response = getPaginatedApplications(applicationRepository.findAll(getPageable(page, size, sortBy, sortDir)));
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findAll(getPageable(page, size, sortBy, sortDir)),false);
         logger.info("Fetched {} applications", response.getData().size());
         return response;
     }
@@ -179,46 +218,22 @@ public class ApplicationService implements ApplicationServiceInterface {
 
     @Override
     @Cacheable(value = "applicationData",key = "'candidate_'+#candidateId+'_applications_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<ApplicationDto> getCandidateApplications(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<ApplicationResponseDto> getCandidateApplications(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all applications Of candidateId : {}  - page: {}, size: {}, sortBy: {}, sortDir: {}",candidateId, page, size, sortBy, sortDir);
-        PaginatedResponse<ApplicationDto> response = getPaginatedApplications(applicationRepository.findByCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)));
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findByCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)),false);
         logger.info("Fetched {} applications of candidateId : {}", response.getData().size(),candidateId);
         return response;
     }
 
     @Override
     @Cacheable(value = "applicationData",key = "'position_'+#positionId+'_applications_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<ApplicationDto> getPositionApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<ApplicationResponseDto> getPositionApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all applications Of positionId : {}  - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
-        PaginatedResponse<ApplicationDto> response = getPaginatedApplications(applicationRepository.findByPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)));
+        PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
+                applicationRepository.findByPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)),false);
         logger.info("Fetched {} applications of positionId : {}", response.getData().size(),positionId);
         return response;
-    }
-
-    @Transactional
-    private void shortListApplication(Integer applicationId) {
-        logger.info("Shortlisting application with ApplicationId: {}", applicationId);
-
-        ShortlistedApplicationStatusModel shortlistedApplicationStatus = new ShortlistedApplicationStatusModel();
-        shortlistedApplicationStatus.setShortlistedApplicationStatus(ShortlistedApplicationStaus.SHORTLISTED);
-        shortlistedApplicationStatus.setShortlistedApplicationFeedback("Your Application Is Shortlisted For this Position, Wait For Your Interview Schedule !");
-
-        ShortlistedApplicationStatusModel savedShortlistedApplicationStatus = shortlistedApplicationStatusRepository.save(shortlistedApplicationStatus);
-        logger.debug("Saved ShortlistedApplicationStatus with ID: {}", savedShortlistedApplicationStatus.getShortlistedApplicationStatusId());
-
-        ApplicationModel application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> {
-                    logger.error("Application not found with ID: {}", applicationId);
-                    return new ResourceNotFoundException("Application", "applicationId", applicationId.toString());
-                });
-
-        ShortlistedApplicationModel newShortlistedApplication = new ShortlistedApplicationModel();
-        newShortlistedApplication.setApplication(application);
-        newShortlistedApplication.setShortlistedApplicationStatus(savedShortlistedApplicationStatus);
-
-        ShortlistedApplicationModel savedShortlistedApplication = shortlistedApplicationRepository.save(newShortlistedApplication);
-        logger.info("Shortlisted application saved successfully with ID: {}", savedShortlistedApplication.getShortlistedApplicationId());
-
     }
 
     private Pageable getPageable(Integer page, Integer size, String sortBy, String sortDir) {
@@ -228,9 +243,9 @@ public class ApplicationService implements ApplicationServiceInterface {
         return PageRequest.of(page, size, sort);
     }
 
-    private PaginatedResponse<ApplicationDto> getPaginatedApplications(Page<ApplicationModel> pageResponse) {
-        PaginatedResponse<ApplicationDto> response = new PaginatedResponse<>();
-        response.setData(convertContent(pageResponse.getContent()));
+    private PaginatedResponse<ApplicationResponseDto> getPaginatedApplications(Page<ApplicationModel> pageResponse,Boolean shortlisted) {
+        PaginatedResponse<ApplicationResponseDto> response = new PaginatedResponse<>();
+        response.setData(convertContent(pageResponse.getContent(),shortlisted));
         response.setCurrentPage(pageResponse.getNumber());
         response.setLast(pageResponse.isLast());
         response.setPageSize(pageResponse.getSize());
@@ -239,28 +254,51 @@ public class ApplicationService implements ApplicationServiceInterface {
         return response;
     }
 
-    private List<ApplicationDto> convertContent(List<ApplicationModel> content) {
-        List<ApplicationDto> applications = new ArrayList<>();
-        content.forEach(application -> {
-            applications.add(converter(application));
-        });
+    private List<ApplicationResponseDto> convertContent(List<ApplicationModel> content,Boolean shortlisted) {
+        List<ApplicationResponseDto> applications = new ArrayList<>();
+        content.forEach(application -> applications.add(converter(application,shortlisted)));
         return applications;
     }
 
-    protected ApplicationDto converter(ApplicationModel entity){
-        ApplicationDto dto = new ApplicationDto();
+    protected ApplicationResponseDto converter(ApplicationModel entity,Boolean shortlisted){
+        ApplicationResponseDto dto = new ApplicationResponseDto();
         dto.setApplicationId(entity.getApplicationId());
+        dto.setIsShortlisted(entity.getIsShortlisted());
         dto.setPositionId(entity.getPosition().getPositionId());
         dto.setCandidateId(entity.getCandidate().getCandidateId());
         dto.setApplicationStatus(converter(entity.getApplicationStatus()));
+        if(shortlisted == true)
+            dto.setApplicationRounds(entity.getRounds().stream().map(this::converter).toList());
         return dto;
     }
-    private ApplicationStatusDto converter(ApplicationStatusModel entity){
-        ApplicationStatusDto dto = new ApplicationStatusDto();
+
+    private ApplicationStatusResponseDto converter(ApplicationStatusModel entity){
+        ApplicationStatusResponseDto dto = new ApplicationStatusResponseDto();
         dto.setApplicationStatusId(entity.getApplicationStatusId());
         dto.setApplicationStatus(entity.getApplicationStatus());
         dto.setApplicationFeedback(entity.getApplicationFeedback());
         return dto;
     }
 
+    private RoundResponseDto converter(RoundModel entity){
+        RoundResponseDto dto = new RoundResponseDto();
+        dto.setRoundId(entity.getRoundId());
+        dto.setRoundType(entity.getRoundType());
+        dto.setRoundResult(entity.getRoundResult());
+        dto.setRoundDate(entity.getRoundDate());
+        dto.setRoundExpectedTime(entity.getRoundExpectedTime());
+        dto.setRoundDurationInMinutes(entity.getRoundDurationInMinutes());
+        dto.setRoundSequence(entity.getRoundSequence());
+        dto.setRoundStatus(convertor(entity.getRoundStatus()));
+        return dto;
+    }
+
+    private RoundStatusResponseDto convertor(RoundStatusModel entity){
+        RoundStatusResponseDto dto = new RoundStatusResponseDto();
+        dto.setRoundStatusId(entity.getRoundStatusId());
+        dto.setRating(entity.getRating());
+        dto.setRoundStatus(entity.getRoundStatus());
+        dto.setRoundFeedback(entity.getRoundFeedback());
+        return dto;
+    }
 }

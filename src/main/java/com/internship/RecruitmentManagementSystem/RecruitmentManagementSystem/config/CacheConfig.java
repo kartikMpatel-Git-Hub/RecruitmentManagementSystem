@@ -41,7 +41,9 @@ public class CacheConfig {
                 "candidateSkill",
                 "positionData",
                 "applicationData",
-                "shortlistedApplicationData"
+                "shortlistedApplicationData",
+                "roundData",
+                "interviewData"
         );
         cacheManager.setCaffeine(caffeine);
         return cacheManager;

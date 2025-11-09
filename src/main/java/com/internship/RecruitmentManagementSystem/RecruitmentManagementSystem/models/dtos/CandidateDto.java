@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class CandidateDto {
 
     private String userName;

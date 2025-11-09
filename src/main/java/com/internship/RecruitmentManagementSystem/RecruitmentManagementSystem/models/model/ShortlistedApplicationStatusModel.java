@@ -9,17 +9,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-@Entity
-@Table(name = "tbl_shortlisted_application_status",indexes = {
-        @Index(name = "idx_shortlisted_application_status", columnList = "shortlisted_application_status"),
-        @Index(name = "idx_created_at", columnList = "createdAt"),
-        @Index(name = "idx_updated_at", columnList = "updatedAt")
-})
+//@Entity
+//@Table(name = "tbl_shortlisted_application_status",indexes = {
+//        @Index(name = "idx_shortlisted_application_status", columnList = "shortlisted_application_status"),
+//        @Index(name = "idx_created_at", columnList = "createdAt"),
+//        @Index(name = "idx_updated_at", columnList = "updatedAt")
+//})
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+//@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ShortlistedApplicationStatusModel extends BaseEntity {
 
     @Id

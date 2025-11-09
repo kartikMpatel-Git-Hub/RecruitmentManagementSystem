@@ -1,21 +1,24 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserChangePasswordDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
-import java.util.List;
-
 public interface UserServiceInterface {
 
-    public UserDto registerUser(UserDto userDto,String roleName);
-    public UserDto getUser(Integer userId);
-    public PaginatedResponse<UserDto> getUsers(Integer page,Integer size,String sortBy,String sortDir);
-    public PaginatedResponse<UserDto> getCandidates(Integer page,Integer size,String sortBy,String sortDir);
-    public PaginatedResponse<UserDto> getNonCandidates(Integer page,Integer size,String sortBy,String sortDir);
-    public UserDto getUserByUserName(String userName);
-    public void deleteUser(Integer userId);
-    public UserDto updateUser(UserDto userDto, Integer userId, AccountDetails accountDetails);
-    public UserDto changePassword(UserModel currentUser, String oldPassword, String newPassword);
+    UserResponseDto registerUser(UserCreateDto userDto, String roleName);
+    UserResponseDto getUser(Integer userId);
+    PaginatedResponse<UserResponseDto> getUsers(Integer page,Integer size,String sortBy,String sortDir);
+    PaginatedResponse<UserResponseDto> getCandidates(Integer page,Integer size,String sortBy,String sortDir);
+    PaginatedResponse<UserResponseDto> getNonCandidates(Integer page,Integer size,String sortBy,String sortDir);
+    PaginatedResponse<UserResponseDto> getInterviewers(Integer page,Integer size,String sortBy,String sortDir);
+    UserResponseDto getUserByUserName(String userName);
+    void deleteUser(Integer userId);
+    UserResponseDto updateUser(UserUpdateDto userDto, Integer userId, AccountDetails accountDetails);
+    UserResponseDto changePassword(UserModel currentUser, UserChangePasswordDto changePassword);
+
 }

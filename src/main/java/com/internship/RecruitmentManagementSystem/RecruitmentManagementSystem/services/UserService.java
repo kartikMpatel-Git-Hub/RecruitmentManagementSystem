@@ -5,7 +5,11 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserChangePasswordDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoleResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoleModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
@@ -26,14 +30,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 public class UserService implements UserServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private static final String USER_NOT_FOUND = "User not found with %s: %s";
-    private static final String ROLE_NOT_FOUND = "Role not found with %s: %s";
     private static final String USERNAME_EXISTS = "Username already exists";
     private static final String EMAIL_EXISTS = "Email already exists";
 
@@ -58,7 +58,7 @@ public class UserService implements UserServiceInterface {
             @CacheEvict(value = "userCandidateData", allEntries = true),
             @CacheEvict(value = "userNonCandidateData", allEntries = true)
     })
-    public UserDto registerUser(UserDto userDto, String roleName) {
+    public UserResponseDto registerUser(UserCreateDto userDto, String roleName) {
         logger.info("Attempting to register new user with username: {}", userDto.getUserName());
         validateNewUser(userDto);
         logger.debug("Validation successful for new user: {}", userDto.getUserName());
@@ -66,7 +66,7 @@ public class UserService implements UserServiceInterface {
     }
 
     @Transactional
-    private UserDto register(UserDto userDto, String roleName) {
+    private UserResponseDto register(UserCreateDto userDto, String roleName) {
         logger.debug("Starting transactional registration for user: {} with role: {}", userDto.getUserName(), roleName);
         UserModel user = convertor(userDto);
         Integer roleId = AppConstant.getRoleId(roleName);
@@ -88,35 +88,42 @@ public class UserService implements UserServiceInterface {
 
     @Override
     @Cacheable(value = "currentUserData", key = "'id_' + #userId")
-    public UserDto getUser(Integer userId) {
+    public UserResponseDto getUser(Integer userId) {
         logger.info("Fetching user details for ID: {}", userId);
         return convertor(findUserById(userId));
     }
 
     @Override
     @Cacheable(value = "userData", key = "'page_'+#page+'_'+'size_'+#size+'_'+'sortBy_'+#sortBy+'_'+'sortDir_'+#sortDir")
-    public PaginatedResponse<UserDto> getUsers(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<UserResponseDto> getUsers(Integer page, Integer size, String sortBy, String sortDir) {
         logger.debug("Fetching users page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
         return getPaginatedUsers(userRepository.findAll(getPageable(page, size, sortBy, sortDir)));
     }
 
     @Override
     @Cacheable(value = "userCandidateData", key = "'page_'+#page+'_'+'size_'+#size+'_'+'sortBy_'+#sortBy+'_'+'sortDir_'+#sortDir")
-    public PaginatedResponse<UserDto> getCandidates(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<UserResponseDto> getCandidates(Integer page, Integer size, String sortBy, String sortDir) {
         logger.debug("Fetching candidate users page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
         return getPaginatedUsers(userRepository.findCandidate(getPageable(page, size, sortBy, sortDir)));
     }
 
     @Override
     @Cacheable(value = "userNonCandidateData", key = "'page_'+#page+'_'+'size_'+#size+'_'+'sortBy_'+#sortBy+'_'+'sortDir_'+#sortDir")
-    public PaginatedResponse<UserDto> getNonCandidates(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<UserResponseDto> getNonCandidates(Integer page, Integer size, String sortBy, String sortDir) {
         logger.debug("Fetching non-candidate users page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
         return getPaginatedUsers(userRepository.findNonCandidate(getPageable(page, size, sortBy, sortDir)));
     }
 
-    private PaginatedResponse<UserDto> getPaginatedUsers(Page<UserModel> pageResponse) {
+    @Override
+    @Cacheable(value = "userData", key = "'interviewers_page_'+#page+'_'+'size_'+#size+'_'+'sortBy_'+#sortBy+'_'+'sortDir_'+#sortDir")
+    public PaginatedResponse<UserResponseDto> getInterviewers(Integer page, Integer size, String sortBy, String sortDir) {
+        logger.debug("Fetching Interviewer users page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
+        return getPaginatedUsers(userRepository.findInterviewers(getPageable(page, size, sortBy, sortDir)));
+    }
+
+    private PaginatedResponse<UserResponseDto> getPaginatedUsers(Page<UserModel> pageResponse) {
         logger.debug("Building PaginatedResponse for {} users", pageResponse.getContent().size());
-        PaginatedResponse<UserDto> response = new PaginatedResponse<>();
+        PaginatedResponse<UserResponseDto> response = new PaginatedResponse<>();
         response.setData(pageResponse.stream().map(this::convertor).toList());
         response.setCurrentPage(pageResponse.getNumber());
         response.setLast(pageResponse.isLast());
@@ -128,7 +135,7 @@ public class UserService implements UserServiceInterface {
 
     @Override
     @Cacheable(value = "currentUserData", key = "'username_' + #userName")
-    public UserDto getUserByUserName(String userName) {
+    public UserResponseDto getUserByUserName(String userName) {
         logger.info("Fetching user by username: {}", userName);
         UserModel userModel = userRepository.findByUserName(userName)
                 .orElseThrow(() -> {
@@ -161,7 +168,7 @@ public class UserService implements UserServiceInterface {
             @CacheEvict(value = "userCandidateData", allEntries = true),
             @CacheEvict(value = "userNonCandidateData", allEntries = true)
     })
-    public UserDto updateUser(UserDto userDto, Integer userId, AccountDetails accountDetails) {
+    public UserResponseDto updateUser(UserUpdateDto userDto, Integer userId, AccountDetails accountDetails) {
         logger.info("Updating user ID: {}", userId);
         UserModel user = findUserById(userId);
         updateUserFields(user, userDto);
@@ -172,28 +179,28 @@ public class UserService implements UserServiceInterface {
 
     @Transactional
     @Override
-    public UserDto changePassword(UserModel currentUser, String oldPassword, String newPassword) {
+    public UserResponseDto changePassword(UserModel currentUser, UserChangePasswordDto changePassword) {
         logger.info("Changing password for user ID: {}", currentUser.getUserId());
 
-        if (oldPassword.equalsIgnoreCase(newPassword)) {
+        if (changePassword.getCurrentPassword().equalsIgnoreCase(changePassword.getNewPassword())) {
             logger.error("New password must be different from old password for user ID: {}", currentUser.getUserId());
             throw new IllegalArgumentException("New Password And Old Password Must Be Different !");
         }
 
-        passwordValidation(newPassword);
+        passwordValidation(changePassword.getNewPassword());
 
-        if (!passwordEncoder.matches(oldPassword, currentUser.getUserPassword())) {
+        if (!passwordEncoder.matches(changePassword.getCurrentPassword(), currentUser.getUserPassword())) {
             logger.error("Incorrect old password for user ID: {}", currentUser.getUserId());
             throw new IllegalArgumentException("Current password is incorrect");
         }
 
-        currentUser.setUserPassword(passwordEncoder.encode(newPassword));
+        currentUser.setUserPassword(passwordEncoder.encode(changePassword.getNewPassword()));
         userRepository.save(currentUser);
         logger.info("Password updated successfully for user ID: {}", currentUser.getUserId());
         return convertor(currentUser);
     }
 
-    private void validateNewUser(UserDto userDto) {
+    private void validateNewUser(UserCreateDto userDto) {
         logger.debug("Validating new user for duplicates: username={}, email={}", userDto.getUserName(), userDto.getUserEmail());
 
         if (userRepository.existsByUserName(userDto.getUserName())) {
@@ -224,7 +231,7 @@ public class UserService implements UserServiceInterface {
                 });
     }
 
-    private void updateUserFields(UserModel user, UserDto userDto) {
+    private void updateUserFields(UserModel user, UserUpdateDto userDto) {
         logger.debug("Updating fields for user ID: {}", user.getUserId());
 
         if (userDto.getUserName() != null && !userDto.getUserName().trim().isEmpty()) {
@@ -234,11 +241,6 @@ public class UserService implements UserServiceInterface {
         if (userDto.getUserEmail() != null && !userDto.getUserEmail().trim().isEmpty()) {
             validateEmailUpdate(user, userDto.getUserEmail());
             user.setUserEmail(userDto.getUserEmail());
-        }
-
-        if (userDto.getUserPassword() != null && !userDto.getUserPassword().trim().isEmpty()) {
-            logger.debug("Encoding and updating password for user ID: {}", user.getUserId());
-            user.setUserPassword(passwordEncoder.encode(userDto.getUserPassword()));
         }
 
         if (userDto.getUserImageUrl() != null && !userDto.getUserImageUrl().trim().isEmpty()) {
@@ -256,16 +258,24 @@ public class UserService implements UserServiceInterface {
         }
     }
 
-    private UserDto convertor(UserModel userModel) {
-        logger.trace("Mapping UserModel -> UserDto for ID: {}", userModel.getUserId());
-        return modelMapper.map(userModel, UserDto.class);
+    private UserResponseDto convertor(UserModel entity) {
+        logger.trace("Mapping UserModel -> UserResponseDto for ID: {}", entity.getUserId());
+        UserResponseDto userResponseDto = new UserResponseDto();
+        userResponseDto.setUserId(entity.getUserId());
+        userResponseDto.setUserName(entity.getUsername());
+        userResponseDto.setUserEmail(entity.getUserEmail());
+        userResponseDto.setUserImageUrl(entity.getUserImageUrl());
+        userResponseDto.setRole(modelMapper.map(entity.getRole(), RoleResponseDto.class));
+        userResponseDto.setCreatedAt(entity.getCreatedAt());
+        userResponseDto.setUpdatedAt(entity.getUpdatedAt());
+        userResponseDto.setUserEnabled(entity.getUserEnabled());
+        return userResponseDto;
     }
 
-    private UserModel convertor(UserDto userDto) {
-        logger.trace("Mapping UserDto -> UserModel for username: {}", userDto.getUserName());
+    private UserModel convertor(UserCreateDto userDto) {
+        logger.trace("Mapping UserCreateDto -> UserModel for username: {}", userDto.getUserName());
         return modelMapper.map(userDto, UserModel.class);
     }
-
     private void passwordValidation(String password) {
         if (password.length() < 8) {
             logger.error("Password validation failed: less than 8 characters");

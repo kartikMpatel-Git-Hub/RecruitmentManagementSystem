@@ -8,18 +8,20 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-@Entity
-@Table(name = "tbl_shortlisted_application",indexes = {
-        @Index(name = "idx_shortlisted_application_id", columnList = "shortlisted_application_id"),
-        @Index(name = "idx_application_id", columnList = "application_id"),
-        @Index(name = "idx_created_at", columnList = "createdAt"),
-        @Index(name = "idx_updated_at", columnList = "updatedAt")
-})
+import java.util.List;
+
+//@Entity
+//@Table(name = "tbl_shortlisted_application",indexes = {
+//        @Index(name = "idx_shortlisted_application_id", columnList = "shortlisted_application_id"),
+//        @Index(name = "idx_application_id", columnList = "application_id"),
+//        @Index(name = "idx_created_at", columnList = "createdAt"),
+//        @Index(name = "idx_updated_at", columnList = "updatedAt")
+//})
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+//@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ShortlistedApplicationModel extends BaseEntity {
 
     @Id
@@ -34,5 +36,8 @@ public class ShortlistedApplicationModel extends BaseEntity {
     @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     @JoinColumn(name = "shortlisted_application_status_id", referencedColumnName = "shortlisted_application_status_id")
     private ShortlistedApplicationStatusModel shortlistedApplicationStatus;
+
+    @OneToMany(mappedBy = "shortlistedApplication",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    private List<RoundModel> rounds;
 
 }

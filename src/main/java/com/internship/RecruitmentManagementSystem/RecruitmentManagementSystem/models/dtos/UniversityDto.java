@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class UniversityDto {
 
     private Integer universityId;

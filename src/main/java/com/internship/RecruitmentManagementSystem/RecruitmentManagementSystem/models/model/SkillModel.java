@@ -25,7 +25,7 @@ public class SkillModel extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false,length = 10)
+    @Column(nullable = false,length = 10,name = "skill_Id")
     private Integer skillId;
 
     @Column(unique = true,length = 30)

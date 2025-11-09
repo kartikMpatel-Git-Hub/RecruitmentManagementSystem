@@ -4,6 +4,8 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
@@ -60,9 +62,9 @@ public class UserController {
         String userName = authentication.getName();
         logger.info("Fetching profile for user: {}", userName);
 
-        UserDto user = userService.getUserByUserName(userName);
+        UserResponseDto user = userService.getUserByUserName(userName);
         if (user.getRole().getRole().equalsIgnoreCase("CANDIDATE")) {
-            CandidateDto candidate = candidateService.getCandidateByUserId(user.getUserId());
+            var candidate = candidateService.getCandidateByUserId(user.getUserId());
             logger.info("Returning candidate profile for user ID: {}", user.getUserId());
             return ResponseEntity.ok(candidate);
         }
@@ -72,15 +74,15 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDto> getProfile(@PathVariable Integer userId) {
+    public ResponseEntity<UserResponseDto> getProfile(@PathVariable Integer userId) {
         logger.info("Fetching user profile by ID: {}", userId);
-        UserDto user = userService.getUser(userId);
+        var user = userService.getUser(userId);
         return ResponseEntity.ok(user);
     }
 
     @PutMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateUserData(
-            @RequestPart("user") @Valid UserDto request,
+            @RequestPart("user") @Valid UserUpdateDto request,
             @PathVariable Integer userId,
             @RequestPart(value = "image", required = false) MultipartFile userImage,
             @RequestPart(value = "accountInfo", required = false) AccountDetails accountDetails) {
@@ -94,7 +96,7 @@ public class UserController {
                 logger.info("Uploaded user image for user ID: {}", userId);
             }
 
-            UserDto updatedUser = userService.updateUser(request, userId, accountDetails);
+            var updatedUser = userService.updateUser(request, userId, accountDetails);
             logger.info("Successfully updated user with ID: {}", userId);
             return ResponseEntity.ok(updatedUser);
 
@@ -109,7 +111,7 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<PaginatedResponse<UserDto>> getAllUser(
+    public ResponseEntity<PaginatedResponse<UserResponseDto>> getAllUser(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "30") Integer size,
             @RequestParam(defaultValue = "userId") String sortBy,
@@ -121,7 +123,7 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/non-candidates")
-    public ResponseEntity<PaginatedResponse<UserDto>> getAllNonCandidateUsers(
+    public ResponseEntity<PaginatedResponse<UserResponseDto>> getAllNonCandidateUsers(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "30") Integer size,
             @RequestParam(defaultValue = "userId") String sortBy,
@@ -133,7 +135,7 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
     @GetMapping("/candidates")
-    public ResponseEntity<PaginatedResponse<UserDto>> getAllCandidateUsers(
+    public ResponseEntity<PaginatedResponse<UserResponseDto>> getAllCandidateUsers(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "30") Integer size,
             @RequestParam(defaultValue = "userId") String sortBy,
@@ -141,6 +143,18 @@ public class UserController {
     ) {
         logger.info("Fetching candidate users (page: {}, size: {})", page, size);
         return ResponseEntity.ok(userService.getCandidates(page, size, sortBy, sortDir));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR','REVIEWER')")
+    @GetMapping("/interviewers")
+    public ResponseEntity<PaginatedResponse<UserResponseDto>> getAllInterviewerUsers(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "30") Integer size,
+            @RequestParam(defaultValue = "userId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        logger.info("Fetching Interviewer users (page: {}, size: {})", page, size);
+        return ResponseEntity.ok(userService.getInterviewers(page, size, sortBy, sortDir));
     }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String error) {

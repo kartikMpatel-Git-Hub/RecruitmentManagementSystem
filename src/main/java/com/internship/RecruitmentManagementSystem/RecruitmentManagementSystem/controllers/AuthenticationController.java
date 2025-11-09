@@ -2,8 +2,8 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.c
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.CredentialException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserPasswordDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserChangePasswordDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.requests.JwtAuthenticationRequest;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
@@ -13,6 +13,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.se
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.FileService;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/authentication")
 @CrossOrigin(origins = "http://localhost:5173")
+@RequiredArgsConstructor
 public class AuthenticationController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
@@ -45,7 +47,6 @@ public class AuthenticationController {
     private static final String EMAIL_REQUIRED = "User Email Not Found!";
     private static final String ROLE_REQUIRED = "User Role Not Found!";
     private static final String IMAGE_REQUIRED = "User Image Not Found!";
-    private static final String USER_ID_REQUIRED = "User Id Not Found!";
 
     private final JwtTokenHelper jwtTokenHelper;
     private final UserDetailsService userDetailsService;
@@ -55,16 +56,6 @@ public class AuthenticationController {
 
     @Value("${project.image}")
     private String path;
-
-    public AuthenticationController(JwtTokenHelper jwtTokenHelper, UserDetailsService userDetailsService,
-                                    AuthenticationManager authenticationManager, UserService userService,
-                                    FileService fileService) {
-        this.jwtTokenHelper = jwtTokenHelper;
-        this.userDetailsService = userDetailsService;
-        this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.fileService = fileService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<?> createToken(@RequestBody JwtAuthenticationRequest request) {
@@ -81,7 +72,7 @@ public class AuthenticationController {
 
         logger.debug("Loading UserDetails for username: {}", request.getUserName());
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUserName());
-        UserDto user = userService.getUserByUserName(request.getUserName());
+        var user = userService.getUserByUserName(request.getUserName());
 
         logger.debug("Generating JWT token for user: {}", request.getUserName());
         String token = jwtTokenHelper.generateToken(userDetails);
@@ -94,18 +85,18 @@ public class AuthenticationController {
 
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserModel user,
-                                            @RequestBody UserPasswordDto request) {
+                                            @RequestBody UserChangePasswordDto request) {
         logger.info("Password change requested by user: {}", user.getUsername());
         logger.debug("Validating old and new password for user: {}", user.getUsername());
-        UserDto changedPasswordUser = userService.changePassword(user, request.getCurrentPassword(), request.getNewPassword());
+        var changedPasswordUser = userService.changePassword(user, request);
         logger.info("Password successfully changed for user: {}", user.getUsername());
         return new ResponseEntity<>(changedPasswordUser, HttpStatus.OK);
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid UserDto request,
-                                             @RequestPart(value = "image", required = true) MultipartFile userImage,
-                                             @RequestPart(value = "role", required = true) String userRole) {
+    public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid UserCreateDto request,
+                                             @RequestPart(value = "image") MultipartFile userImage,
+                                             @RequestPart(value = "role") String userRole) {
         logger.info("User registration API called for username: {}", request.getUserName());
 
         List<String> errors = validateRegistrationRequest(request, userImage, userRole);
@@ -121,7 +112,7 @@ public class AuthenticationController {
 
             request.setUserImageUrl(fileName);
             logger.debug("Creating user in database for username: {}", request.getUserName());
-            UserDto registeredUser = userService.registerUser(request, userRole);
+            var registeredUser = userService.registerUser(request, userRole);
 
             logger.info("User registration successful for username: {}", request.getUserName());
             return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
@@ -159,7 +150,7 @@ public class AuthenticationController {
         return errors;
     }
 
-    private List<String> validateRegistrationRequest(UserDto request, MultipartFile userImage, String userRole) {
+    private List<String> validateRegistrationRequest(UserCreateDto request, MultipartFile userImage, String userRole) {
         List<String> errors = new ArrayList<>();
         if (userImage == null || userImage.isEmpty()) errors.add(IMAGE_REQUIRED);
         if (isNullOrEmpty(request.getUserName())) errors.add(USERNAME_REQUIRED);
