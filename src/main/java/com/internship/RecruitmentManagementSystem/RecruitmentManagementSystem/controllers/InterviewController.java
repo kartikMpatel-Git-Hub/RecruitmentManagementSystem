@@ -1,9 +1,10 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.InterviewCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.InterviewUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.InterviewerFeedbackCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.InterviewResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.interview.InterviewCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.interview.InterviewUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.interview.InterviewerFeedbackCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.interview.InterviewerFeedbackUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.interview.InterviewResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.InterviewService;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +25,12 @@ public class InterviewController {
     private static final Logger log = LoggerFactory.getLogger(InterviewController.class);
     private final InterviewService interviewService;
 
-    @PostMapping
-    public ResponseEntity<InterviewResponseDto> createInterview(@RequestBody InterviewCreateDto dto) {
+    @PostMapping("/")
+    public ResponseEntity<String> createInterview(@RequestBody InterviewCreateDto dto) {
         log.info("POST /interviews -> Creating interview with data: {}", dto);
         var createdInterview = interviewService.createInterview(dto);
-        log.info("Interview created successfully with ID: {}", createdInterview.getInterviewId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdInterview);
+        log.info("Interview created successfully !");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Interviewer Set Successfully !");
     }
 
     @PutMapping("/{interviewId}")
@@ -74,6 +75,16 @@ public class InterviewController {
         log.info("Fetched {} interviews (Page {}/{})",
                 response.getData().size(), response.getCurrentPage() + 1, response.getTotalPages());
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/complete/{interviewId}")
+    public ResponseEntity<?> interviewComplete(
+            @PathVariable Integer interviewId
+    ){
+        log.info("PUT /interviews/complete/{} -> complete interview for interviewId={}",interviewId,interviewId);
+        var response = interviewService.interviewComplete(interviewId);
+        log.info("Interview Completed With inteviewId={}",interviewId);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
     @GetMapping("/round/{roundId}")
@@ -140,8 +151,39 @@ public class InterviewController {
         return ResponseEntity.ok(updatedInterview);
     }
 
-    @GetMapping("/{interviewId}/feedback/{interviewerFeedbackId}")
+    @PutMapping("/{interviewId}/feedbacks/{interviewFeedbackId}")
+    public ResponseEntity<?> editInterviewFeedback(
+            @PathVariable Integer interviewId,
+            @PathVariable Integer interviewFeedbackId,
+            @RequestBody InterviewerFeedbackUpdateDto updatingFeedback
+    ){
+        log.info("PUT /interviews/{}/feedback/{} -> Updating feedback for interviewFeedbackId={}",
+                interviewId, interviewFeedbackId, interviewFeedbackId);
+
+        var updatedInterview = interviewService.updateFeedbackById(interviewFeedbackId, updatingFeedback);
+
+        log.info("Updated feedback for interviewFeedbackId={} in interviewId={}",
+                interviewFeedbackId, interviewId);
+        return ResponseEntity.ok(updatedInterview);
+    }
+
+    @GetMapping("/{interviewId}/feedback/{interviewerId}")
     public ResponseEntity<?> getInterviewerFeedback(
+            @PathVariable Integer interviewId,
+            @PathVariable Integer interviewerId
+    ) {
+        log.info("GET /interviews/{}/feedback/{} -> Fetching feedback for interviewerId={}",
+                interviewId, interviewerId, interviewerId);
+
+        var interviewerFeedback = interviewService.getInterviewerFeedback(interviewId,interviewerId);
+
+        log.info("Fetched feedback for interviewerId={} in interviewId={}",
+                interviewerId, interviewId);
+        return ResponseEntity.ok(interviewerFeedback);
+    }
+
+    @GetMapping("/{interviewId}/feedbacks/{interviewerFeedbackId}")
+    public ResponseEntity<?> getInterviewerFeedbackById(
             @PathVariable Integer interviewId,
             @PathVariable Integer interviewerFeedbackId
     ) {

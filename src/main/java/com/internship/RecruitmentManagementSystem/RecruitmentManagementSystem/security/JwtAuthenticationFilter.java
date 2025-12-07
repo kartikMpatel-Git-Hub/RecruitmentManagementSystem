@@ -60,6 +60,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
             if(jwtTokenHelper.validateToken(token,userDetails)){
                 // Authentication
+//                logger.error(userDetails.isEnabled());
+//                logger.error(userDetails.isAccountNonExpired());
                 if (!userDetails.isEnabled()) {
                     throw new JwtAuthenticationException("User is disabled!");
                 }

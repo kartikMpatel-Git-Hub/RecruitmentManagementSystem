@@ -1,10 +1,11 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundStatusUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundStatusResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundResultDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundStatusResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
 public interface RoundServiceInterface {
@@ -15,9 +16,9 @@ public interface RoundServiceInterface {
 
     RoundResponseDto getRound(Integer roundId);
 
-    RoundResponseDto updateRound(Integer roundId, RoundUpdateDto round);
+    RoundResponseDto roundResult(Integer roundId, RoundResultDto roundResult);
 
-    RoundStatusResponseDto updateRoundStatus(Integer roundId, Integer roundStatusId, RoundStatusUpdateDto roundStatus);
+    RoundResponseDto updateRound(Integer roundId, RoundUpdateDto round);
 
     PaginatedResponse<RoundResponseDto> applicationRound(Integer applicationId, Integer page, Integer size, String sortBy, String sortDir);
 

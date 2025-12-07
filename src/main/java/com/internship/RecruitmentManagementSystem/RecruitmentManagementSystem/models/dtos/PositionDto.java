@@ -1,6 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.PositionRoundCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.position.PositionRoundCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.PositionType;
 import lombok.*;
 

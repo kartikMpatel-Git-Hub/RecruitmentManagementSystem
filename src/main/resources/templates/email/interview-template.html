@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            max-width: 650px;
+            margin: auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #ffffff;
+        }
+        .header {
+            text-align: center;
+            padding: 10px;
+            border-bottom: 2px solid #1990ff;
+        }
+        .logo {
+            width: 120px;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 22px;
+            color: #1990ff;
+            margin: 0;
+        }
+        .content {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333333;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #777777;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #1990ff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .detail-box {
+            background: #f7faff;
+            border-left: 4px solid #1990ff;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <h2 class="title">Interview Notification</h2>
+    </div>
+
+    <div class="content">
+        <p>Hello <strong>{{name}}</strong>,</p>
+
+        <p>Your interview details are as follows:</p>
+
+        <div class="detail-box">
+            <p><strong>Date:</strong> {{date}}</p>
+            <p><strong>Time:</strong> {{time}}</p>
+            <p><strong>Interviewers:</strong> {{interviewers}}</p>
+            <p><strong>Role:</strong> {{role}}</p>
+        </div>
+
+        <a href="{{link}}" class="cta-button">Join Interview</a>
+
+        <p style="margin-top: 20px;">Please be available on time.</p>
+    </div>
+
+    <div class="footer">
+        ©2025 All Rights Reserved.
+    </div>
+
+</div>
+</body>
+</html>

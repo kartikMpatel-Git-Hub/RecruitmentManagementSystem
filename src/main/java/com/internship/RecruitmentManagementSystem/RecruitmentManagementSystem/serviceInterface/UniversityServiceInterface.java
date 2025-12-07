@@ -1,8 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UniversityCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UniversityUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UniversityResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.university.UniversityCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.university.UniversityUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.university.UniversityResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
 public interface UniversityServiceInterface {

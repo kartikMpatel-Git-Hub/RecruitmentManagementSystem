@@ -1,8 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.SkillCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.SkillUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.SkillResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.skill.SkillCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.skill.SkillUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.skill.SkillResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.SkillService;

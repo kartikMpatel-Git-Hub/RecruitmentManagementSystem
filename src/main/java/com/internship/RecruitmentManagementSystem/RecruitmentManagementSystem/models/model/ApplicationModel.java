@@ -29,21 +29,21 @@ public class ApplicationModel extends BaseEntity {
     @Column(name = "application_id")
     private Integer applicationId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
     private PositionModel position;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "candidate_id")
     private CandidateModel candidate;
 
-    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "application_status_id", referencedColumnName = "application_status_id")
     private ApplicationStatusModel applicationStatus;
 
     private Boolean isShortlisted;
 
-    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
     private List<RoundModel> rounds = new ArrayList<>();
 
 }

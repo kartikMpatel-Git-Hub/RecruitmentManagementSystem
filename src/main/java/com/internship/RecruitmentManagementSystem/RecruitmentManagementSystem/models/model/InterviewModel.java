@@ -38,16 +38,19 @@ public class InterviewModel extends BaseEntity {
     private String interviewLink;
 
     @NotNull
-    @FutureOrPresent
+//    @FutureOrPresent
     private LocalTime interviewTime;
 
     @NotNull
-    @FutureOrPresent
-    private LocalDate localDate;
+    private LocalTime interviewEndTime;
+
+    @NotNull
+//    @FutureOrPresent
+    private LocalDate interviewDate;
 
     @Enumerated(EnumType.STRING)
     private InterviewStatus interviewStatus;
 
-    @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
     private Set<InterviewInterviewerModel> interviewers = new HashSet<>();
 }

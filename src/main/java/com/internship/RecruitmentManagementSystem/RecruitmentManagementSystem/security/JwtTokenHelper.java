@@ -1,8 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.security;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

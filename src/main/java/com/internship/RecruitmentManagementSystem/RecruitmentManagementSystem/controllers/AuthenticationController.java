@@ -1,9 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.CredentialException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserChangePasswordDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserChangePasswordDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.requests.JwtAuthenticationRequest;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
@@ -139,7 +138,7 @@ public class AuthenticationController {
             logger.debug("Authentication successful for user: {}", userName);
         } catch (DisabledException e) {
             logger.error("Authentication failed for user: {} | Reason: Disabled account", userName);
-            throw new CredentialException("User Is Disabled!");
+            throw new DisabledException("User Is Disabled!");
         }
     }
 

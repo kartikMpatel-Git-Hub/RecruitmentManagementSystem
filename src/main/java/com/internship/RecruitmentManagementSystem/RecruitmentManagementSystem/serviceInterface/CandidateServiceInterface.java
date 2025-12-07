@@ -1,7 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.CandidateRegistrationResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;

@@ -1,11 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 //@Configuration
 public class ModelMapperConfig {

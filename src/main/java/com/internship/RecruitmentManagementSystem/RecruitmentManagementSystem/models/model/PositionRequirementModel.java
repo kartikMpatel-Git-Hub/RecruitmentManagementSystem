@@ -26,7 +26,7 @@ public class PositionRequirementModel {
     @JoinColumn(name = "position_required_skill_id")
     private SkillModel positionRequiredSkill;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
     private PositionModel position;
 

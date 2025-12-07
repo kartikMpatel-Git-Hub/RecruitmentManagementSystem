@@ -1,9 +1,15 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.*;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.*;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.degree.DegreeGetDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.position.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.degree.DegreeResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionRequirementResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionRoundResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionStatusResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.skill.SkillResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.*;
@@ -69,8 +75,6 @@ public class PositionService implements PositionServiceInterface {
         newPosition.getPositionRounds().forEach(round -> {
             PositionRoundModel newRound = new PositionRoundModel();
             newRound.setPosition(savedPosition);
-            newRound.setPositionRoundExpectedDate(round.getPositionRoundExpectedDate());
-            newRound.setPositionRoundExpectedTime(round.getPositionRoundExpectedTime());
             newRound.setPositionRoundType(round.getPositionRoundType());
             newRound.setPositionRoundSequence(round.getPositionRoundSequence());
             positionRound.add(positionRoundRepository.save(newRound));
@@ -198,12 +202,6 @@ public class PositionService implements PositionServiceInterface {
         if(positionRound.getPositionRoundType() != null){
             existingPositionRound.setPositionRoundType(positionRound.getPositionRoundType());
             existingPositionRound.setPositionRoundSequence(positionRound.getPositionRoundSequence());
-        }
-        if(positionRound.getPositionRoundExpectedDate() != null){
-            existingPositionRound.setPositionRoundExpectedDate(positionRound.getPositionRoundExpectedDate());
-        }
-        if(positionRound.getPositionRoundExpectedTime() != null){
-            existingPositionRound.setPositionRoundExpectedTime(positionRound.getPositionRoundExpectedTime());
         }
 
         return convertor(positionRoundRepository.save(existingPositionRound));
@@ -427,8 +425,6 @@ public class PositionService implements PositionServiceInterface {
         dto.setPositionRoundId(entity.getPositionRoundId());
         dto.setPositionRoundType(entity.getPositionRoundType());
         dto.setPositionRoundSequence(entity.getPositionRoundSequence());
-        dto.setPositionRoundExpectedDate(entity.getPositionRoundExpectedDate());
-        dto.setPositionRoundExpectedTime(entity.getPositionRoundExpectedTime());
 
         return dto;
     }

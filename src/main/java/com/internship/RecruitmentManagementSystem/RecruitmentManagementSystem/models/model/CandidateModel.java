@@ -80,7 +80,7 @@ public class CandidateModel extends BaseEntity {
     @Column(nullable = true)
     private Integer candidateTotalExperienceInYears;
 
-    @OneToOne(optional = false)
+    @OneToOne(optional = false,orphanRemoval = true)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserModel user;
 
