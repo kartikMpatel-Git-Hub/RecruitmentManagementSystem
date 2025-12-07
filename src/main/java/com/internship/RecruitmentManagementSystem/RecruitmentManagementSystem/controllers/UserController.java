@@ -2,10 +2,8 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.c
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.UserDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ErrorResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
@@ -155,6 +153,18 @@ public class UserController {
     ) {
         logger.info("Fetching Interviewer users (page: {}, size: {})", page, size);
         return ResponseEntity.ok(userService.getInterviewers(page, size, sortBy, sortDir));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR','REVIEWER')")
+    @GetMapping("/hrs")
+    public ResponseEntity<PaginatedResponse<UserResponseDto>> getAllHrUsers(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "30") Integer size,
+            @RequestParam(defaultValue = "userId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        logger.info("Fetching hrs users (page: {}, size: {})", page, size);
+        return ResponseEntity.ok(userService.getHrs(page, size, sortBy, sortDir));
     }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String error) {

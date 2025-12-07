@@ -4,8 +4,6 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.co
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundResult;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundType;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,11 +11,12 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "tbl_round",indexes = {
         @Index(name = "idx_application",columnList = "application_id"),
-        @Index(name = "idx_round_status",columnList = "round_status_id"),
+//        @Index(name = "idx_round_status",columnList = "round_status_id"),
         @Index(name = "idx_created_at", columnList = "createdAt"),
         @Index(name = "idx_updated_at", columnList = "updatedAt")
 })
@@ -25,7 +24,7 @@ import java.time.LocalTime;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RoundModel extends BaseEntity {
+public class    RoundModel extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +40,6 @@ public class RoundModel extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private RoundResult roundResult;
 
-    @FutureOrPresent(message = "Round date must be today or in the future")
     private LocalDate roundDate;
 
     private LocalTime roundExpectedTime;
@@ -50,7 +48,12 @@ public class RoundModel extends BaseEntity {
 
     private Integer roundSequence;
 
-    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
-    @JoinColumn(name = "round_status_id",referencedColumnName = "round_status_id")
-    private RoundStatusModel roundStatus;
+    private String roundFeedback;
+
+    private Double roundRating;
+
+    @OneToMany(mappedBy = "round", fetch = FetchType.LAZY)
+    private List<InterviewModel> interviews;
+
+
 }

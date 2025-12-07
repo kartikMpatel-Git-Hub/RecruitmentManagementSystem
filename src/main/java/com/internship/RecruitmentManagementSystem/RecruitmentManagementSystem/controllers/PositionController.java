@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.degree.DegreeGetDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.position.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.PositionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

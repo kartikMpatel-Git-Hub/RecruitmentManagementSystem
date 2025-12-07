@@ -107,7 +107,7 @@ public class CandidateController {
     @GetMapping(value = "/{candidateId}")
     public ResponseEntity<?> getCandidate(@PathVariable Integer candidateId) {
         logger.info("Fetching candidate details for ID: {}", candidateId);
-        CandidateDto candidate = candidateService.getCandidate(candidateId);
+        var candidate = candidateService.getCandidate(candidateId);
         logger.debug("Fetched candidate details: {}", candidate);
         return new ResponseEntity<>(candidate, HttpStatus.OK);
     }

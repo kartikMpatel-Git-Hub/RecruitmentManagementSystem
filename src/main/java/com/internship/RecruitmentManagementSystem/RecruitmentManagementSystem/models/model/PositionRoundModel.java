@@ -33,10 +33,6 @@ public class PositionRoundModel extends BaseEntity {
     @JoinColumn(name = "positionId",nullable = false)
     private PositionModel position;
 
-    private LocalDate positionRoundExpectedDate;
-
-    private LocalTime positionRoundExpectedTime;
-
     @NotNull
     @Enumerated(EnumType.STRING)
     private RoundType positionRoundType;

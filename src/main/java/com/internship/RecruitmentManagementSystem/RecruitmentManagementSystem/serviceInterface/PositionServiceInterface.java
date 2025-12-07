@@ -1,8 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.*;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.PositionRequirementResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.PositionResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.PositionRoundResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.degree.DegreeGetDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.position.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionRequirementResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position.PositionRoundResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
 import java.util.List;
@@ -25,7 +26,7 @@ public interface PositionServiceInterface {
 
     PositionRequirementResponseDto addPositionRequirement(Integer positionId, PositionRequirementCreateDto newPosition);
 
-    PositionRequirementResponseDto updatePositionRequirement(Integer positionRequirementId,PositionRequirementUpdateDto newPosition);
+    PositionRequirementResponseDto updatePositionRequirement(Integer positionRequirementId, PositionRequirementUpdateDto newPosition);
 
     void removePositionRequirement(Integer positionRequirementId);
 

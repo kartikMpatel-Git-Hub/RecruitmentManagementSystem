@@ -1,24 +1,17 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.RoundDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.RoundStatusDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundStatusUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundStatusResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundResultDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ApplicationStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundResult;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.ApplicationModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoundModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoundStatusModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.ApplicationRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.CandidateRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RoundRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RoundStatusRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.RoundServiceInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +31,6 @@ public class RoundService implements RoundServiceInterface {
 
     private final ApplicationRepository applicationRepository;
     private final RoundRepository roundRepository;
-    private final RoundStatusRepository roundStatusRepository;
-    private final CandidateRepository candidateRepository;
 
     @Transactional
     @Override
@@ -54,20 +45,14 @@ public class RoundService implements RoundServiceInterface {
             return new ResourceNotFoundException("Application", "applicationId", applicationId.toString());
         });
 
-        RoundStatusModel roundStatus = new RoundStatusModel();
-        roundStatus.setRating(null);
-        roundStatus.setRoundFeedback("Your Round Will Schedule Soon !");
-        roundStatus.setRoundStatus(RoundStatus.UNDERPROCESS);
-        RoundStatusModel savedRoundStatus = roundStatusRepository.save(roundStatus);
-
-        RoundModel newRound = getNewRound(createDto, application, savedRoundStatus);
+        RoundModel newRound = getNewRound(createDto, application);
 
         RoundModel savedRound = roundRepository.save(newRound);
         log.info("Round added successfully with roundId={} for applicationId={}", savedRound.getRoundId(), applicationId);
         return converter(savedRound);
     }
 
-    private static RoundModel getNewRound(RoundCreateDto createDto, ApplicationModel application, RoundStatusModel savedRoundStatus) {
+    private static RoundModel getNewRound(RoundCreateDto createDto, ApplicationModel application) {
         RoundModel newRound = new RoundModel();
         newRound.setApplication(application);
         newRound.setRoundSequence(createDto.getRoundSequence());
@@ -76,7 +61,8 @@ public class RoundService implements RoundServiceInterface {
         newRound.setRoundExpectedTime(createDto.getRoundExpectedTime());
         newRound.setRoundDate(createDto.getRoundDate());
         newRound.setRoundDurationInMinutes(createDto.getRoundDurationInMinutes());
-        newRound.setRoundStatus(savedRoundStatus);
+        newRound.setRoundFeedback("");
+        newRound.setRoundRating(0D);
         return newRound;
     }
 
@@ -88,7 +74,7 @@ public class RoundService implements RoundServiceInterface {
     public void removeRound(Integer roundId) {
         log.info("Removing round with roundId={}", roundId);
         RoundModel round = roundRepository.findById(roundId).orElseThrow(() -> {
-            log.error("Round not found for roundId={}", roundId);
+            log.error("Round not found for roundId = {}", roundId);
             return new ResourceNotFoundException("Round", "roundId", roundId.toString());
         });
         roundRepository.delete(round);
@@ -112,24 +98,41 @@ public class RoundService implements RoundServiceInterface {
             @CacheEvict(value = "applicationData",allEntries = true),
             @CacheEvict(value = "roundData",allEntries = true),
     })
+    public RoundResponseDto roundResult(Integer roundId, RoundResultDto roundResult) {
+        log.debug("Fetching round with roundId For Pass ={}", roundId);
+        RoundModel round = roundRepository.findById(roundId).orElseThrow(() -> {
+            log.error("Round not found for roundId={}", roundId);
+            return new ResourceNotFoundException("Round", "roundId", roundId.toString());
+        });
+        round.setRoundResult(roundResult.getRoundResult());
+        if(roundResult.getRoundResult().equals(RoundResult.FAIL)){
+            ApplicationModel application = round.getApplication();
+            application.getApplicationStatus().setApplicationStatus(ApplicationStatus.REJECTED);
+            applicationRepository.save(application);
+        }
+        round.setRoundFeedback(roundResult.getRoundFeedback());
+        round.setRoundRating(roundResult.getRoundRating());
+
+        log.debug("Round Result Set successfully with roundId={}", roundId);
+
+        return converter(roundRepository.save(round));
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "applicationData",allEntries = true),
+            @CacheEvict(value = "roundData",allEntries = true),
+    })
     public RoundResponseDto updateRound(Integer roundId, RoundUpdateDto round) {
         log.info("Updating round with roundId={}", roundId);
         RoundModel existingRound = roundRepository.findById(roundId).orElseThrow(() -> {
             log.error("Round not found for roundId = {}", roundId);
             return new ResourceNotFoundException("Round", "roundId", roundId.toString());
         });
-        if(round.getRoundStatus() != null){
-//            if (round.getRoundStatus().getRating() != null)
-//                existingRound.getRoundStatus().setRating(round.getRoundStatus().getRating());
-            if (round.getRoundStatus().getRoundFeedback() != null)
-                existingRound.getRoundStatus().setRoundFeedback(round.getRoundStatus().getRoundFeedback());
-//            if (round.getRoundStatus().getRoundStatus() != null)
-//                existingRound.getRoundStatus().setRoundStatus(round.getRoundStatus().getRoundStatus());
-        }
         if (round.getRoundExpectedDate() != null && round.getRoundExpectedTime() != null){
             existingRound.setRoundDate(round.getRoundExpectedDate());
             existingRound.setRoundExpectedTime(round.getRoundExpectedTime());
-            existingRound.getRoundStatus().setRoundStatus(RoundStatus.SCHEDULED);
             ApplicationModel application = existingRound.getApplication();
             application.getApplicationStatus().setApplicationFeedback("Your Round Has Been Scheduled !");
             applicationRepository.save(application);
@@ -149,48 +152,11 @@ public class RoundService implements RoundServiceInterface {
             manageSequence(existingRound.getRoundSequence(),round.getRoundSequence(),existingRound.getApplication().getRounds());
             existingRound.setRoundSequence(round.getRoundSequence());
         }
-//        if (round.getRoundType() != null) existingRound.setRoundType(round.getRoundType());
-//
-//        if (round.getRoundResult() != null){
-//            existingRound.setRoundResult(round.getRoundResult());
-//            ApplicationModel application = existingRound.getApplication();
-//            if(round.getRoundResult().toString().equalsIgnoreCase("PASS") || round.getRoundResult().toString().equalsIgnoreCase("FAIL")){
-//                existingRound.getRoundStatus().setRoundStatus(RoundStatus.COMPLETED);
-//                if(round.getRoundResult().toString().equalsIgnoreCase("FAIL")){
-//                    application.getApplicationStatus().setApplicationStatus(ApplicationStatus.REJECTED);
-//                    application.getApplicationStatus().setApplicationFeedback("Unfortunately You Are Rejected " + round.getRoundStatus().getRoundFeedback());
-//                }
-//            }else{
-//                application.getApplicationStatus().setApplicationStatus(ApplicationStatus.SHORTLISTED);
-//                application.getApplicationStatus().setApplicationFeedback("Your Application is Shortlisted, Next Round Will Be In Process Soon !");
-//            }
-//            applicationRepository.save(application);
-//        }
         RoundModel updatedRound = roundRepository.save(existingRound);
         log.info("Round updated successfully with roundId={}", roundId);
         return converter(updatedRound);
     }
 
-    @Override
-    @Caching(evict = {
-            @CacheEvict(value = "applicationData",allEntries = true),
-            @CacheEvict(value = "roundData",allEntries = true),
-    })
-    public RoundStatusResponseDto updateRoundStatus(Integer roundId,Integer roundStatusId, RoundStatusUpdateDto roundStatus) {
-        log.info("Updating round status with roundStatusId={}", roundStatusId);
-        RoundStatusModel existingRoundStatus = roundStatusRepository.findById(roundStatusId).orElseThrow(() -> {
-            log.error("RoundStatus not found for roundStatusId={}", roundStatusId);
-            return new ResourceNotFoundException("RoundStatus", "roundStatusId", roundStatusId.toString());
-        });
-
-        if (roundStatus.getRating() != null) existingRoundStatus.setRating(roundStatus.getRating());
-        if (roundStatus.getRoundFeedback() != null) existingRoundStatus.setRoundFeedback(roundStatus.getRoundFeedback());
-        if (roundStatus.getRoundStatus() != null) existingRoundStatus.setRoundStatus(roundStatus.getRoundStatus());
-
-        RoundStatusModel updatedRoundStatus = roundStatusRepository.save(existingRoundStatus);
-        log.info("Round status updated successfully for roundStatusId={}", roundStatusId);
-        return convertor(updatedRoundStatus);
-    }
 
     @Override
     @Cacheable(value = "roundData",key = "'rounds_application_+'#applicationId'+_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
@@ -207,17 +173,14 @@ public class RoundService implements RoundServiceInterface {
     }
 
     private void manageSequence(Integer oldSequence, Integer newSequence, List<RoundModel> rounds) {
-        if(newSequence.equals(oldSequence)){
-            return;
-        }
-        else if (newSequence < oldSequence) {
+        if (newSequence < oldSequence) {
             for (RoundModel round : rounds) {
                 if (round.getRoundSequence() >= newSequence && round.getRoundSequence() < oldSequence) {
                     round.setRoundSequence(round.getRoundSequence() + 1); // shift down
                 }
             }
         }
-        else{
+        else if(newSequence > oldSequence){
             for (RoundModel round : rounds) {
                 if (round.getRoundSequence() <= newSequence && round.getRoundSequence() > oldSequence) {
                     round.setRoundSequence(round.getRoundSequence() - 1); // shift up
@@ -256,16 +219,8 @@ public class RoundService implements RoundServiceInterface {
         dto.setRoundDurationInMinutes(entity.getRoundDurationInMinutes());
         log.info("Duration : {}",entity.getRoundDurationInMinutes());
         dto.setRoundSequence(entity.getRoundSequence());
-        dto.setRoundStatus(convertor(entity.getRoundStatus()));
-        return dto;
-    }
-
-    private RoundStatusResponseDto convertor(RoundStatusModel entity) {
-        RoundStatusResponseDto dto = new RoundStatusResponseDto();
-        dto.setRoundStatusId(entity.getRoundStatusId());
-        dto.setRating(entity.getRating());
-        dto.setRoundStatus(entity.getRoundStatus());
         dto.setRoundFeedback(entity.getRoundFeedback());
+        dto.setRoundRating(entity.getRoundRating());
         return dto;
     }
 }

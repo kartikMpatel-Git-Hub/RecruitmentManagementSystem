@@ -31,7 +31,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse> resourceNotFoundExceptionHandler(ResourceNotFoundException ex){
         String message = ex.getMessage();
@@ -63,8 +62,9 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<?> DisabledExceptionHandler(DisabledException ex) {
+        System.out.println("HERE");
         return new ResponseEntity<>(
-                "User is disabled, please contact admin",
+                "Your Account Is Disabled By Admin !",
                 HttpStatus.BAD_REQUEST
         );
     }

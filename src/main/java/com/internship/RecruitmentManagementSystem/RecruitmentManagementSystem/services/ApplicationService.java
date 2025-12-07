@@ -1,16 +1,19 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.*;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.ApplicationStatusUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.ApplicationResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.ApplicationStatusResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoundStatusResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.application.ApplicationResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.application.ApplicationStatusResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.interview.InterviewInterviewerResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.interview.InterviewResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.interview.InterviewerFeedbackResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.skill.SkillRatingResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.skill.SkillResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserMinimalResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ApplicationStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundResult;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.*;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +46,6 @@ public class ApplicationService implements ApplicationServiceInterface {
     private final ApplicationStatusRepository applicationStatusRepository;
     private final CandidateRepository candidateRepository;
     private final RoundRepository roundRepository;
-    private final RoundStatusRepository roundStatusRepository;
 
     @Override
     @Transactional
@@ -74,7 +77,7 @@ public class ApplicationService implements ApplicationServiceInterface {
 
         ApplicationModel savedApplication = applicationRepository.save(application);
         logger.info("Application added successfully with ID: {}", savedApplication.getApplicationId());
-        return converter(savedApplication,false);
+        return converter(savedApplication);
     }
 
     @Override
@@ -95,20 +98,13 @@ public class ApplicationService implements ApplicationServiceInterface {
 
         application.getPosition().getPositionRounds().forEach(
                 round -> {
-                    RoundStatusModel roundStatus = new RoundStatusModel();
-                    roundStatus.setRating(null);
-                    roundStatus.setRoundFeedback("Your Round Will Schedule Soon !");
-                    roundStatus.setRoundStatus(RoundStatus.UNDERPROCESS);
-
                     RoundModel newRound = new RoundModel();
                     newRound.setApplication(application);
                     newRound.setRoundSequence(round.getPositionRoundSequence());
                     newRound.setRoundType(round.getPositionRoundType());
                     newRound.setRoundResult(RoundResult.valueOf("PENDING"));
-                    newRound.setRoundExpectedTime(round.getPositionRoundExpectedTime());
-                    newRound.setRoundDate(round.getPositionRoundExpectedDate());
-                    newRound.setRoundStatus(roundStatusRepository.save(roundStatus));
-
+                    newRound.setRoundFeedback("");
+                    newRound.setRoundRating(0D);
                     roundRepository.save(newRound);
                 }
         );
@@ -121,7 +117,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     public PaginatedResponse<ApplicationResponseDto> getAllShortlistedApplications(Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all Shortlisted applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response =
-                getPaginatedApplications(applicationRepository.findByIsShortlistedTrue(getPageable(page, size, sortBy, sortDir)),true);
+                getPaginatedApplications(applicationRepository.findByIsShortlistedTrue(getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} Shortlisted applications ", response.getData().size());
         return response;
     }
@@ -131,7 +127,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     public PaginatedResponse<ApplicationResponseDto> getPositionShortlistedApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all Shortlisted applications Of Position : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
-                applicationRepository.findByIsShortlistedTrueAndPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)),true);
+                applicationRepository.findByIsShortlistedTrueAndPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} Shortlisted applications of PositionId : {} ", response.getData().size(),positionId);
         return response;
     }
@@ -141,7 +137,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     public PaginatedResponse<ApplicationResponseDto> getCandidateShortlistedApplications(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all Shortlisted applications Of Candidate : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",candidateId, page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
-                applicationRepository.findByIsShortlistedTrueAndCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)),true);
+                applicationRepository.findByIsShortlistedTrueAndCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} Shortlisted applications of CandidateId : {} ", response.getData().size(),candidateId);
         return response;
     }
@@ -161,6 +157,10 @@ public class ApplicationService implements ApplicationServiceInterface {
 
         if(newApplicationStatus.getApplicationFeedback() != null){
             existingApplicationStatus.setApplicationFeedback(newApplicationStatus.getApplicationFeedback());
+        }else{
+            if(newApplicationStatus.getApplicationStatus() != null && newApplicationStatus.getApplicationStatus().equals(ApplicationStatus.REJECTED)){
+                existingApplicationStatus.setApplicationFeedback("Your Are Rejected For This Position !");
+            }
         }
 
         ApplicationStatusModel updatedApplicationStatus = applicationStatusRepository.save(existingApplicationStatus);
@@ -175,7 +175,7 @@ public class ApplicationService implements ApplicationServiceInterface {
                 () -> new ResourceNotFoundException("Application","applicationId",applicationId.toString())
         );
         logger.info("Fetched application successfully for ID: {}", applicationId);
-        return converter(application,false);
+        return converter(application);
     }
 
     @Override
@@ -183,7 +183,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     public PaginatedResponse<ApplicationResponseDto> getAllApplications(Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response =
-                getPaginatedApplications(applicationRepository.findAll(getPageable(page, size, sortBy, sortDir)),false);
+                getPaginatedApplications(applicationRepository.findAll(getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} applications", response.getData().size());
         return response;
     }
@@ -221,7 +221,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     public PaginatedResponse<ApplicationResponseDto> getCandidateApplications(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all applications Of candidateId : {}  - page: {}, size: {}, sortBy: {}, sortDir: {}",candidateId, page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response =
-                getPaginatedApplications(applicationRepository.findByCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)),false);
+                getPaginatedApplications(applicationRepository.findByCandidateCandidateId(candidateId,getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} applications of candidateId : {}", response.getData().size(),candidateId);
         return response;
     }
@@ -231,7 +231,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     public PaginatedResponse<ApplicationResponseDto> getPositionApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all applications Of positionId : {}  - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
-                applicationRepository.findByPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)),false);
+                applicationRepository.findByPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} applications of positionId : {}", response.getData().size(),positionId);
         return response;
     }
@@ -243,9 +243,9 @@ public class ApplicationService implements ApplicationServiceInterface {
         return PageRequest.of(page, size, sort);
     }
 
-    private PaginatedResponse<ApplicationResponseDto> getPaginatedApplications(Page<ApplicationModel> pageResponse,Boolean shortlisted) {
+    private PaginatedResponse<ApplicationResponseDto> getPaginatedApplications(Page<ApplicationModel> pageResponse) {
         PaginatedResponse<ApplicationResponseDto> response = new PaginatedResponse<>();
-        response.setData(convertContent(pageResponse.getContent(),shortlisted));
+        response.setData(convertContent(pageResponse.getContent()));
         response.setCurrentPage(pageResponse.getNumber());
         response.setLast(pageResponse.isLast());
         response.setPageSize(pageResponse.getSize());
@@ -254,20 +254,20 @@ public class ApplicationService implements ApplicationServiceInterface {
         return response;
     }
 
-    private List<ApplicationResponseDto> convertContent(List<ApplicationModel> content,Boolean shortlisted) {
+    private List<ApplicationResponseDto> convertContent(List<ApplicationModel> content) {
         List<ApplicationResponseDto> applications = new ArrayList<>();
-        content.forEach(application -> applications.add(converter(application,shortlisted)));
+        content.forEach(application -> applications.add(converter(application)));
         return applications;
     }
 
-    protected ApplicationResponseDto converter(ApplicationModel entity,Boolean shortlisted){
+    protected ApplicationResponseDto converter(ApplicationModel entity){
         ApplicationResponseDto dto = new ApplicationResponseDto();
         dto.setApplicationId(entity.getApplicationId());
         dto.setIsShortlisted(entity.getIsShortlisted());
         dto.setPositionId(entity.getPosition().getPositionId());
         dto.setCandidateId(entity.getCandidate().getCandidateId());
         dto.setApplicationStatus(converter(entity.getApplicationStatus()));
-        if(shortlisted == true)
+        if(entity.getIsShortlisted() == true)
             dto.setApplicationRounds(entity.getRounds().stream().map(this::converter).toList());
         return dto;
     }
@@ -289,16 +289,76 @@ public class ApplicationService implements ApplicationServiceInterface {
         dto.setRoundExpectedTime(entity.getRoundExpectedTime());
         dto.setRoundDurationInMinutes(entity.getRoundDurationInMinutes());
         dto.setRoundSequence(entity.getRoundSequence());
-        dto.setRoundStatus(convertor(entity.getRoundStatus()));
+        dto.setRoundFeedback(entity.getRoundFeedback());
+        dto.setRoundRating(entity.getRoundRating());
         return dto;
     }
 
-    private RoundStatusResponseDto convertor(RoundStatusModel entity){
-        RoundStatusResponseDto dto = new RoundStatusResponseDto();
-        dto.setRoundStatusId(entity.getRoundStatusId());
-        dto.setRating(entity.getRating());
-        dto.setRoundStatus(entity.getRoundStatus());
-        dto.setRoundFeedback(entity.getRoundFeedback());
+    private InterviewResponseDto converter(InterviewModel entity) {
+        InterviewResponseDto dto = new InterviewResponseDto();
+        dto.setInterviewId(entity.getInterviewId());
+        dto.setRoundId(entity.getRound().getRoundId());
+
+        dto.setCandidateId(entity.getRound().getApplication().getCandidate().getCandidateId());
+        dto.setPositionId(entity.getRound().getApplication().getPosition().getPositionId());
+        dto.setApplicationId(entity.getRound().getApplication().getApplicationId());
+
+        dto.setInterviewLink(entity.getInterviewLink());
+        dto.setInterviewTime(entity.getInterviewTime());
+        dto.setInterviewEndTime(entity.getInterviewEndTime());
+        dto.setInterviewDate(entity.getInterviewDate());
+        dto.setInterviewStatus(entity.getInterviewStatus());
+        dto.setInterviewers(entity.getInterviewers().stream().map(this::converter).collect(Collectors.toSet()));
+        logger.debug("Converted InterviewModel (id={}) to DTO", entity.getInterviewId());
+        return dto;
+    }
+
+    private InterviewInterviewerResponseDto converter(InterviewInterviewerModel entity) {
+        InterviewInterviewerResponseDto dto = new InterviewInterviewerResponseDto();
+        dto.setInterviewInterviewerId(entity.getInterviewInterviewerId());
+        dto.setInterviewer(converter(entity.getInterviewer()));
+        dto.setInterviewerFeedback(converter(entity.getInterviewerFeedback()));
+        return dto;
+    }
+
+
+    private UserMinimalResponseDto converter(UserModel entity) {
+        logger.trace("Mapping UserModel -> UserResponseDto for ID: {}", entity.getUserId());
+        UserMinimalResponseDto userResponseDto = new UserMinimalResponseDto();
+        userResponseDto.setUserId(entity.getUserId());
+        userResponseDto.setUserName(entity.getUsername());
+        userResponseDto.setUserEmail(entity.getUserEmail());
+        userResponseDto.setUserImageUrl(entity.getUserImageUrl());
+        return userResponseDto;
+    }
+
+    private InterviewerFeedbackResponseDto converter(InterviewerFeedbackModel interviewer) {
+        if(interviewer == null)
+            return null;
+        InterviewerFeedbackResponseDto dto = new InterviewerFeedbackResponseDto();
+        dto.setInterviewFeedbackId(interviewer.getInterviewFeedbackId());
+        dto.setInterviewFeedback(interviewer.getInterviewFeedback());
+        dto.setSkillRatings(interviewer.getSkillRatings().stream().map(this::convertor).toList());
+        return dto;
+    }
+
+    private SkillRatingResponseDto convertor(SkillRatingModel s) {
+        if(s == null)
+            return null;
+        SkillRatingResponseDto dto = new SkillRatingResponseDto();
+        dto.setSkillRatingId(s.getSkillRatingId());
+        dto.setSkillRating(s.getSkillRating());
+        dto.setSkillFeedback(s.getSkillFeedback());
+        dto.setSkill(convertor(s.getSkill()));
+        return dto;
+    }
+
+    private SkillResponseDto convertor(SkillModel entity) {
+        SkillResponseDto dto = new SkillResponseDto();
+
+        dto.setSkillId(entity.getSkillId());
+        dto.setSkill(entity.getSkill());
+
         return dto;
     }
 }

@@ -29,7 +29,7 @@ public class ApplicationStatusModel extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ApplicationStatus applicationStatus;
 
-    @Column(length = 300)
+    @Column(columnDefinition = "TEXT")
     private String applicationFeedback;
 
 }

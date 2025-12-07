@@ -8,16 +8,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@Table(name = "tbl_round_status",indexes = {
-        @Index(name = "idx_round_status_id",columnList = "round_status_id"),
-        @Index(name = "idx_created_at", columnList = "createdAt"),
-        @Index(name = "idx_updated_at", columnList = "updatedAt")
-})
+//@Entity
+//@Table(name = "tbl_round_status",indexes = {
+//        @Index(name = "idx_round_status_id",columnList = "round_status_id"),
+//        @Index(name = "idx_created_at", columnList = "createdAt"),
+//        @Index(name = "idx_updated_at", columnList = "updatedAt")
+//})
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class RoundStatusModel extends BaseEntity {
 
     @Id

@@ -1,8 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundStatusUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.RoundUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundResultDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundUpdateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.RoundService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,16 +47,15 @@ public class RoundController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @PatchMapping("/{roundId}/status/{roundStatusId}")
+    @PutMapping("/pass/{roundId}")
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
-    public ResponseEntity<?> updateStatusRound(
+    public ResponseEntity<?> roundResult(
             @PathVariable Integer roundId,
-            @PathVariable Integer roundStatusId,
-            @RequestBody @Valid RoundStatusUpdateDto roundStatusDto
-    ) {
-        log.info("Updating round status with ID: {}", roundStatusId);
-        var result = roundService.updateRoundStatus(roundId,roundStatusId, roundStatusDto);
-        log.info("Round status updated successfully with ID: {}", roundStatusId);
+            @RequestBody @Valid RoundResultDto roundResult
+            ) {
+        log.info("Pass round with ID: {}", roundId);
+        var result = roundService.roundResult(roundId,roundResult);
+        log.info("Round Pass successfully with ID: {}", roundId);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 

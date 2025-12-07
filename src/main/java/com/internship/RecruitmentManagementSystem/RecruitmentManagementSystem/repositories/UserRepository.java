@@ -22,6 +22,9 @@ public interface UserRepository extends JpaRepository<UserModel,Integer> {
     @Query("SELECT u FROM UserModel u WHERE LOWER(u.role.role) = 'interviewer'")
     Page<UserModel> findInterviewers(Pageable pageable);
 
+    @Query("SELECT u FROM UserModel u WHERE LOWER(u.role.role) = 'hr'")
+    Page<UserModel> findHrs(Pageable pageable);
+
     @Query("SELECT u FROM UserModel u WHERE LOWER(u.role.role) <> 'candidate'")
     Page<UserModel> findNonCandidate(Pageable pageable);
 

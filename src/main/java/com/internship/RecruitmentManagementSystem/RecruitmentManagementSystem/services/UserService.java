@@ -5,11 +5,11 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserChangePasswordDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserCreateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.UserUpdateDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.RoleResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.UserResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserChangePasswordDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.role.RoleResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoleModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
@@ -121,6 +121,12 @@ public class UserService implements UserServiceInterface {
         return getPaginatedUsers(userRepository.findInterviewers(getPageable(page, size, sortBy, sortDir)));
     }
 
+    @Override
+    @Cacheable(value = "userData", key = "'hrs_page_'+#page+'_'+'size_'+#size+'_'+'sortBy_'+#sortBy+'_'+'sortDir_'+#sortDir")
+    public PaginatedResponse<UserResponseDto> getHrs(Integer page, Integer size, String sortBy, String sortDir) {
+        logger.debug("Fetching hrs users page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
+        return getPaginatedUsers(userRepository.findHrs(getPageable(page, size, sortBy, sortDir)));
+    }
     private PaginatedResponse<UserResponseDto> getPaginatedUsers(Page<UserModel> pageResponse) {
         logger.debug("Building PaginatedResponse for {} users", pageResponse.getContent().size());
         PaginatedResponse<UserResponseDto> response = new PaginatedResponse<>();
