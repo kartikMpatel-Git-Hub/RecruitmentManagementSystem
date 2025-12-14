@@ -1,12 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateEducationDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateSkillDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.CandidateSkillModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
-import org.springframework.data.domain.Page;
-
-import java.util.Optional;
 
 public interface CandidateSkillServiceInterface {
 

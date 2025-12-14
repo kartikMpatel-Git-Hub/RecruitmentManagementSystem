@@ -28,6 +28,8 @@ public class PositionResponseDto {
 
     private String positionLanguage;
 
+    private Integer positionMinYearsOfExperience;
+
     private Integer positionTotalOpening;
 
     private PositionStatusResponseDto positionStatus;

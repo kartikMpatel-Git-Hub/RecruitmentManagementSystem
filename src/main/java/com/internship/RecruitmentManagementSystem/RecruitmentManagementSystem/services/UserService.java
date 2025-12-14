@@ -13,9 +13,11 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoleModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.CandidateRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RoleRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.UserRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.UserServiceInterface;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService implements UserServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -38,19 +41,11 @@ public class UserService implements UserServiceInterface {
     private static final String EMAIL_EXISTS = "Email already exists";
 
     private final UserRepository userRepository;
+    private final CandidateRepository candidateRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final CandidateService candidateService;
-
-    public UserService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder,
-                       RoleRepository roleRepository, CandidateService candidateService) {
-        this.userRepository = userRepository;
-        this.modelMapper = modelMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.roleRepository = roleRepository;
-        this.candidateService = candidateService;
-    }
 
     @Override
     @Caching(evict = {
@@ -162,6 +157,9 @@ public class UserService implements UserServiceInterface {
     public void deleteUser(Integer userId) {
         logger.info("Deleting user with ID: {}", userId);
         UserModel user = findUserById(userId);
+        if(user.getRole().getRole().equalsIgnoreCase("candidate")){
+            candidateRepository.deleteByUserUserId(userId);
+        }
         userRepository.delete(user);
         logger.info("Successfully deleted user ID: {}", userId);
     }

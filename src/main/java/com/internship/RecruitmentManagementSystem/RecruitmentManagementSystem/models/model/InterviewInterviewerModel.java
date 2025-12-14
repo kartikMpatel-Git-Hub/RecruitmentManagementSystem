@@ -23,6 +23,8 @@ public class InterviewInterviewerModel extends BaseEntity {
     @JoinColumn(name = "interviewer_id")
     private UserModel interviewer;
 
+    private Boolean isFeedbackGiven;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "interviewer_feedback_id")
     private InterviewerFeedbackModel interviewerFeedback;

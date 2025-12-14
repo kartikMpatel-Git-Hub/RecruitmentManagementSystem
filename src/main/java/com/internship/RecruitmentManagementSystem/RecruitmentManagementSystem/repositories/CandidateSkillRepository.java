@@ -5,10 +5,14 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
-public interface CandidateSkillRepository extends JpaRepository<CandidateSkillModel,Integer> {
+public interface    CandidateSkillRepository extends JpaRepository<CandidateSkillModel,Integer> {
 
     Page<CandidateSkillModel> findByCandidate_CandidateId(Integer candidateId, Pageable pageable);
     Page<CandidateSkillModel> findBySkill_SkillId(Integer skillId, Pageable pageable);
+
+    @Query("select cs.skill.skill ,count(cs) from CandidateSkillModel cs group by cs.skill.skill order by count(cs) desc")
+    Page<Object[]> findTopSkills(Pageable pageable);
 
 }

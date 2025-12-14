@@ -1,6 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.position;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.SkillDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.skill.SkillGetDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.Requirement;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PositionRequirementGetDto {
 
-    private SkillDto positionSkill;
+    private SkillGetDto positionSkill;
 
     private Requirement positionRequirement;
 }

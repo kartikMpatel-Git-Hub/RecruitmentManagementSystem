@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.config.AppConstant;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.UserRole;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoleModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RoleRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -23,11 +24,13 @@ public class PreRunner implements CommandLineRunner {
             String[] roles = {
                     "NORMAL","ADMIN","RECRUITER","HR","INTERVIEWER","CANDIDATE","REVIEWER"
             };
-            for (String role : roles) {
-                if(!roleRepository.existsByRole(role)){
+            UserRole [] userRoles = UserRole.values();
+            for(UserRole role : userRoles){
+//            for (String role : roles) {
+                if(!roleRepository.existsByRole(role.toString())){
                     RoleModel roleModel = new RoleModel();
-                    roleModel.setRoleId(AppConstant.getRoleId(role));
-                    roleModel.setRole(role);
+                    roleModel.setRoleId(AppConstant.getRoleId(role.toString()));
+                    roleModel.setRole(role.toString());
                     roleRepository.save(roleModel);
                 }
             }

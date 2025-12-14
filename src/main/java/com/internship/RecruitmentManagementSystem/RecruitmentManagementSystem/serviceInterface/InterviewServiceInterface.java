@@ -22,7 +22,7 @@ public interface InterviewServiceInterface {
     PaginatedResponse<InterviewResponseDto> getInterviewerInterviews(Integer interviewerId,Integer page, Integer size, String sortBy, String sortDir);
     InterviewerFeedbackResponseDto addFeedbackToInterview(Integer interviewInterviewerId, InterviewerFeedbackCreateDto feedbackCreateDto);
     InterviewerFeedbackResponseDto getFeedbackById(Integer feedbackId);
-    InterviewerFeedbackResponseDto updateFeedbackById(Integer feedbackId,InterviewerFeedbackUpdateDto updatingFeedback);
+    InterviewerFeedbackResponseDto updateFeedbackById(Integer interviewId,Integer feedbackId,InterviewerFeedbackUpdateDto updatingFeedback);
     InterviewerFeedbackResponseDto getInterviewerFeedback(Integer interviewId,Integer interviewerId);
     void deleteFeedback(Integer feedbackId);
 }

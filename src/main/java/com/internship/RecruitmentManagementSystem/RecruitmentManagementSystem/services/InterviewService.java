@@ -146,6 +146,7 @@ public class InterviewService implements InterviewServiceInterface {
                 boolean isSkillRating = round.getRoundType().equals(RoundType.TECHNICAL);
                 model.setInterviewerFeedback(createInterviewFeedback(round.getApplication().getPosition().getPositionRequirements(),isSkillRating));
                 model.setInterviewer(interviewer);
+                model.setIsFeedbackGiven(false);
                 return model;
             }).collect(Collectors.toSet());
 
@@ -409,6 +410,7 @@ public class InterviewService implements InterviewServiceInterface {
                 }
         ).toList());
         interviewerModel.setInterviewerFeedback(interviewerFeedbackModel);
+        interviewerModel.setIsFeedbackGiven(true);
         var savedInterviewerFeedback = interviewInterviewerRepository.save(interviewerModel);
         logger.info("Added feedback for interviewInterviewerId={}", interviewInterviewerId);
         return converter(savedInterviewerFeedback.getInterviewerFeedback());
@@ -431,7 +433,7 @@ public class InterviewService implements InterviewServiceInterface {
             @CacheEvict(value = "interviewData", allEntries = true),
             @CacheEvict(value = "roundData", allEntries = true)
     })
-    public InterviewerFeedbackResponseDto updateFeedbackById(Integer feedbackId, InterviewerFeedbackUpdateDto updatingFeedback) {
+    public InterviewerFeedbackResponseDto updateFeedbackById(Integer interviewId,Integer feedbackId, InterviewerFeedbackUpdateDto updatingFeedback) {
         logger.info("Updating feedback for feedbackId={}", feedbackId);
 
         InterviewerFeedbackModel interviewerFeedback = interviewerFeedbackRepository.findById(feedbackId)
@@ -439,7 +441,12 @@ public class InterviewService implements InterviewServiceInterface {
                     logger.error("Feedback not found with feedbackId={}", feedbackId);
                     return new ResourceNotFoundException("InterviewFeedback", "interviewFeedbackId", feedbackId.toString());
                 });
-
+        InterviewInterviewerModel interviewerInterview = interviewInterviewerRepository.findByInterviewerFeedbackId(feedbackId).orElseThrow(
+                ()->{
+                    logger.error("Interview not found with feedbackId={}", feedbackId);
+                    return new ResourceNotFoundException("InterviewInterviewerFeedback", "feedbackId", feedbackId.toString());
+                }
+        );
         logger.info("Updating feedback text for feedbackId={}", feedbackId);
         interviewerFeedback.setInterviewFeedback(updatingFeedback.getInterviewFeedback());
 
@@ -455,7 +462,8 @@ public class InterviewService implements InterviewServiceInterface {
         });
 
         InterviewerFeedbackModel updatedInterviewerFeedback = interviewerFeedbackRepository.save(interviewerFeedback);
-
+        interviewerInterview.setIsFeedbackGiven(true);
+        interviewInterviewerRepository.save(interviewerInterview);
         logger.info("Updated feedback successfully for feedbackId={}", feedbackId);
         return converter(updatedInterviewerFeedback);
     }
@@ -567,6 +575,7 @@ public class InterviewService implements InterviewServiceInterface {
         InterviewInterviewerResponseDto dto = new InterviewInterviewerResponseDto();
         dto.setInterviewInterviewerId(entity.getInterviewInterviewerId());
         dto.setInterviewer(converter(entity.getInterviewer()));
+        dto.setIsFeedbackGiven(entity.getIsFeedbackGiven() != null ? entity.getIsFeedbackGiven() : false);
         dto.setInterviewerFeedback(converter(entity.getInterviewerFeedback()));
         return dto;
     }

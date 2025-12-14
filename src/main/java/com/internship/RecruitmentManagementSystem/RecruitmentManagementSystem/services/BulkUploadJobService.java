@@ -1,7 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.FailedProcessException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.job.BulkJobResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.job.BulkUploadRowResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.job.JobStatusResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.JobStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.BulkUploadJob;
@@ -10,12 +12,17 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadJobRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadRowResultRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.UserRepository;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.AsyncServiceInterface;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.BulkUploadJobServiceInterface;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,55 +34,87 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BulkUploadJobService implements BulkUploadJobServiceInterface {
 
+    private static final Logger logger = LoggerFactory.getLogger(BulkUploadJobService.class);
+
     private final BulkUploadJobRepository bulkUploadJobRepository;
     private final BulkUploadRowResultRepository bulkUploadRowResultRepository;
-    private final BulkCandidateService candidateService;
+    private final AsyncServiceInterface asyncService;
     private final UserRepository userRepository;
 
     @Override
-    public Integer processBulkUploadJob(MultipartFile file,Integer uploadedById) {
-        try{
+    public Integer processBulkUploadJob(MultipartFile file, Integer uploadedById) {
+
+        logger.info("Starting bulk upload process. UploadedBy ID: {}", uploadedById);
+
+        try {
+            logger.debug("Fetching user who uploaded the file. User ID: {}", uploadedById);
+            UserModel uploadedBy = userRepository.findById(uploadedById).orElseThrow(
+                    () -> new ResourceNotFoundException("User", "id", uploadedById.toString())
+            );
+
+            logger.debug("Creating BulkUploadJob entity for file: {}", file.getOriginalFilename());
+
             BulkUploadJob job = new BulkUploadJob();
             job.setFileName(file.getOriginalFilename());
             job.setStatus(JobStatus.PENDING);
             job.setStartedAt(LocalDateTime.now());
-
-            UserModel uploadedBy = userRepository.findById(uploadedById).orElseThrow(
-                    ()->new ResourceNotFoundException("User", "id", uploadedById.toString())
-            );
             job.setUploadedBy(uploadedBy);
+
             bulkUploadJobRepository.save(job);
-            processAsync(job, file);
+            logger.info("Bulk upload job created with Job ID: {}", job.getJobId());
+
+            logger.info("Initiating asynchronous processing for Job ID: {}", job.getJobId());
+            byte[] fileBytes = file.getBytes();
+            asyncService.processAsync(job, fileBytes,file.getOriginalFilename());
 
             return job.getJobId();
 
         } catch (Exception e) {
-            return -1;
+            throw new FailedProcessException("Failed to process bulk upload job: " + e.getMessage());
         }
     }
 
     @Override
     public JobStatusResponseDto getJobStatus(Integer jobId) {
 
+        logger.info("Fetching status for BulkUpload Job ID: {}", jobId);
+
         BulkUploadJob job = bulkUploadJobRepository.findById(jobId).orElseThrow(
                 () -> new ResourceNotFoundException("BulkUploadJob", "id", jobId.toString())
         );
+
+        logger.debug("Job status retrieved: {}", job.getStatus());
+        List<BulkUploadRowResult> rowResult = bulkUploadRowResultRepository.findByJob(job).stream().toList();
+
         JobStatusResponseDto res = new JobStatusResponseDto();
         res.setJobId(job.getJobId());
         res.setStatus(job.getStatus());
         res.setTotalRows(job.getTotalRows());
         res.setSuccessRows(job.getSuccessRows());
         res.setFailedRows(job.getFailedRows());
+        res.setRowDetails(rowResult.stream().map(result ->{
+            BulkUploadRowResponseDto rowDetails = new BulkUploadRowResponseDto();
+            rowDetails.setRowNumber(result.getRowNum());
+            rowDetails.setStatus(result.isSuccess() ? "ADDED" : "FAILED");
+            rowDetails.setMessage(result.getErrorMessage());
+            return rowDetails;
+        }).toList());
+        logger.info("Successfully fetched status for Job ID: {}", jobId);
+
         return res;
     }
 
     @Override
     public List<BulkJobResponseDto> getAllBulkEntries() {
+
+        logger.info("Fetching all bulk upload entries");
+
         List<BulkUploadJob> jobs = bulkUploadJobRepository.findAll();
-        if(!jobs.isEmpty()){
-            return jobs.stream().map(this::convertor).toList();
-        }
-        return List.of();
+        logger.debug("Total bulk jobs found: {}", jobs.size());
+
+        return jobs.isEmpty()
+                ? List.of()
+                : jobs.stream().map(this::convertor).toList();
     }
 
     private BulkJobResponseDto convertor(BulkUploadJob entity) {
@@ -92,55 +131,4 @@ public class BulkUploadJobService implements BulkUploadJobServiceInterface {
         return dto;
     }
 
-    @Async
-    public void processAsync(BulkUploadJob job, MultipartFile file) {
-        job.setStatus(JobStatus.IN_PROGRESS);
-        bulkUploadJobRepository.save(job);
-
-        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            int total = sheet.getPhysicalNumberOfRows() - 1;
-            job.setTotalRows(total);
-            int success = 0;
-            int failed = 0;
-
-            for (int i = 1; i <= total; i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-
-                BulkUploadRowResult rowResult = new BulkUploadRowResult();
-                rowResult.setJob(job);
-                rowResult.setRowNum(i + 1);
-
-                try {
-                    candidateService.processSingleRow(row);
-                    rowResult.setSuccess(true);
-                    success++;
-                } catch (Exception e) {
-                    rowResult.setSuccess(false);
-                    rowResult.setErrorMessage(e.getMessage());
-                    failed++;
-                }
-
-                bulkUploadRowResultRepository.save(rowResult);
-            }
-
-            job.setSuccessRows(success);
-            job.setFailedRows(failed);
-            List<BulkUploadRowResult> allRows = bulkUploadRowResultRepository.findByJob(job);
-
-//            String successFile = ExcelExportUtil.generateSuccessExcel(job, allRows, outputBasePath);
-//            String errorFile = ExcelExportUtil.generateErrorExcel(jobId, allRows, outputBasePath);
-//
-//            job.setSuccessFilePath(successFile);
-//            job.setErrorFilePath(errorFile);
-            job.setStatus(JobStatus.COMPLETED);
-            job.setCompletedAt(LocalDateTime.now());
-            bulkUploadJobRepository.save(job);
-
-        } catch (Exception e) {
-            job.setStatus(JobStatus.FAILED);
-            bulkUploadJobRepository.save(job);
-        }
-    }
 }

@@ -34,7 +34,10 @@ public interface PositionServiceInterface {
 
     PaginatedResponse<PositionResponseDto> getAllPositions(Integer page, Integer size, String sortBy, String sortDir);
 
+    PaginatedResponse<PositionResponseDto> getAllPositionsByRecruiter(Integer recruiterId,Integer page, Integer size, String sortBy, String sortDir);
+
     Long countActivePosition();
 
     PositionResponseDto addRound(Integer positionId, PositionRoundCreateDto positionRound);
+
 }

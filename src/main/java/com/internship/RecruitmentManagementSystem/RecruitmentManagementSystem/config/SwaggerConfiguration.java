@@ -29,7 +29,7 @@ public class SwaggerConfiguration {
 
     private Info getInfo() {
         return new Info()
-                .title("blog App")
+                .title("Recruitment Management System")
                 .version("1.0")
                 .description("API documentation for Blog App project using SpringDoc & Swagger UI")
                 .contact(new Contact()

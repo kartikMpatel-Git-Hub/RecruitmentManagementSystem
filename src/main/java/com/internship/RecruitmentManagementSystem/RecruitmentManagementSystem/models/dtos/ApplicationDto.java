@@ -8,10 +8,6 @@ import lombok.Setter;
 
 import java.util.List;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
 @Deprecated
 public class ApplicationDto {
 

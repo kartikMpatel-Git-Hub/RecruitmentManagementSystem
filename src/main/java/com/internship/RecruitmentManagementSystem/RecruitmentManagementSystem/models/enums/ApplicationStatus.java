@@ -1,8 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums;
 
 public enum ApplicationStatus {
+    MAPPED,
     PENDING,
-    ACCEPTED,
+    HIRED,
     REJECTED,
     ONHOLD,
     UNDERPROCESS,

@@ -26,6 +26,8 @@ public class PositionCreateDto {
 
     private Integer positionTotalOpening;
 
+    private Integer positionMinYearsOfExperience;
+
     private PositionStatusGetDto positionStatus;
 
     private List<PositionRequirementCreateDto> positionRequirements;

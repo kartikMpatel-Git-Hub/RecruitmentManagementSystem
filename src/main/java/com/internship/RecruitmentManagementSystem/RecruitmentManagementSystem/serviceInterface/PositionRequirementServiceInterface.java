@@ -8,7 +8,7 @@ public interface PositionRequirementServiceInterface {
 
     PositionRequirementDto addPositionRequirement(Integer positionId,PositionRequirementDto newPosition);
 
-    PositionRequirementDto updatePositionRequirement(Integer positionRequirementId,PositionRequirementDto newPosition);
+    PositionRequirementDto updatePositionRequirement(Integer positionRequirementId, PositionRequirementDto newPosition);
 
     void removePositionRequirement(Integer positionRequirementId);
 

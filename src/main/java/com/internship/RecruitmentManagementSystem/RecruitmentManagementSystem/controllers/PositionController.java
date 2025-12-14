@@ -2,6 +2,7 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.c
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.degree.DegreeGetDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.position.*;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.PositionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +35,7 @@ public class PositionController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','HR','REVIEWER')")
     public ResponseEntity<?> getAllPositions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
@@ -42,6 +45,22 @@ public class PositionController {
         log.info("Fetching all positions (page: {}, size: {}, sortBy: {}, sortDir: {})", page, size, sortBy, sortDir);
         var response = positionService.getAllPositions(page, size, sortBy, sortDir);
         log.info("Fetched {} positions successfully", response.getData().size());
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/recruiter")
+    @PreAuthorize("hasAnyRole('RECRUITER')")
+    public ResponseEntity<?> getAllPositionsByRecruiter(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "positionId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
+    ) {
+        UserModel currentUser = (UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Integer recruiterId = currentUser.getUserId();
+        log.info("Fetching all positions By Recruiter {} (page: {}, size: {}, sortBy: {}, sortDir: {})",recruiterId, page, size, sortBy, sortDir);
+        var response = positionService.getAllPositionsByRecruiter(recruiterId,page, size, sortBy, sortDir);
+        log.info("Fetched {} positions By Recruiter {} successfully", response.getData().size(),recruiterId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

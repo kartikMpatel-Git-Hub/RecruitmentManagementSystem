@@ -9,5 +9,5 @@ public interface SkillRepository extends JpaRepository<SkillModel,Integer> {
 
     Optional<SkillModel> findBySkill(String skill);
     Boolean existsBySkill(String skill);
-
+    long count();
 }

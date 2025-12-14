@@ -32,15 +32,15 @@ public class CandidateModel extends BaseEntity {
     private Integer candidateId;
 
     @Column(nullable = true,length = 30)
-    @Size(min = 3,max = 30)
+    @Size(min = 2,max = 30)
     private String candidateFirstName;
 
     @Column(nullable = true,length = 30)
-    @Size(min = 3,max = 30)
+    @Size(min = 2,max = 30)
     private String candidateMiddleName;
 
     @Column(nullable = true,length = 30)
-    @Size(min = 3,max = 30)
+    @Size(min = 2,max = 30)
     private String candidateLastName;
 
     @Column(unique = true, nullable = true,length = 12)
@@ -59,15 +59,15 @@ public class CandidateModel extends BaseEntity {
     private String candidateAddress;
 
     @Column(nullable = true,length = 30)
-    @Size(min = 3,max = 30)
+    @Size(min = 2,max = 30)
     private String candidateCity;
 
     @Column(nullable = true,length = 30)
-    @Size(min = 3,max = 30)
+    @Size(min = 2,max = 30)
     private String candidateState;
 
     @Column(nullable = true,length = 30)
-    @Size(min = 3,max = 30)
+    @Size(min = 2,max = 30)
     private String candidateCountry;
 
     @Column(nullable = true,length = 10)
@@ -80,15 +80,15 @@ public class CandidateModel extends BaseEntity {
     @Column(nullable = true)
     private Integer candidateTotalExperienceInYears;
 
-    @OneToOne(optional = false,orphanRemoval = true)
+    @OneToOne(optional = false,cascade = CascadeType.REMOVE)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserModel user;
 
-//    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
-//    @JoinTable(
-//            name = "tbl_candidate_skills",
-//            joinColumns = @JoinColumn(name = "candidate_id",referencedColumnName = "candidateId"),
-//            inverseJoinColumns = @JoinColumn(name = "skill_id",referencedColumnName = "skillId")
-//    )
-//    private List<SkillModel> skills = new ArrayList<>();
+    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CandidateSkillModel> candidateSkills = new ArrayList<>();
+
+    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CandidateEducationModel> candidateEducations = new ArrayList<>();
+
+
 }

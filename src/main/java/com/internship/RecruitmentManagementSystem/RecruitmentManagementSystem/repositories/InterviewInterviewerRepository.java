@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface InterviewInterviewerRepository extends JpaRepository<InterviewInterviewerModel, Integer> {
     List<InterviewInterviewerModel> findByInterviewInterviewId(Integer interviewId);
@@ -58,5 +59,13 @@ public interface InterviewInterviewerRepository extends JpaRepository<InterviewI
             @Param("endTime") LocalTime endTime
     );
 
+
+    @Query("""
+            select ii
+            from InterviewInterviewerModel ii
+            join ii.interviewerFeedback if
+            where if.interviewFeedbackId = :interviewFeedbackId
+            """)
+    Optional<InterviewInterviewerModel> findByInterviewerFeedbackId(Integer interviewFeedbackId);
 
 }

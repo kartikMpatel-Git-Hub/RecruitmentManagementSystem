@@ -1,5 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.FailedProcessException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationStatusUpdateDto;
@@ -28,6 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +48,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     private final ApplicationStatusRepository applicationStatusRepository;
     private final CandidateRepository candidateRepository;
     private final RoundRepository roundRepository;
+    private final MatchingScoreService matchingScoreService;
 
     @Override
     @Transactional
@@ -63,8 +66,18 @@ public class ApplicationService implements ApplicationServiceInterface {
                 ()->new ResourceNotFoundException("Candidate","candidateId",newApplication.getCandidateId().toString())
         );
 
+        if(applicationRepository.existsByCandidateCandidateIdAndPositionPositionId(candidate.getCandidateId(),position.getPositionId())){
+            throw new FailedProcessException("Filed to apply ! You have already applied for this position.");
+        }
+
+        Double score = matchingScoreService.calculateMatchingScore(candidate,position);
+        return createApplication(candidate,position,ApplicationStatus.UNDERPROCESS,score);
+    }
+
+    private ApplicationResponseDto createApplication(CandidateModel candidate,PositionModel position,ApplicationStatus status,Double score){
+
         ApplicationStatusModel applicationStatus = new ApplicationStatusModel();
-        applicationStatus.setApplicationStatus(ApplicationStatus.valueOf("UNDERPROCESS"));
+        applicationStatus.setApplicationStatus(status);
         applicationStatus.setApplicationFeedback("Your Application Is Under Evaluation !");
 
         ApplicationStatusModel savedApplicationStatus = applicationStatusRepository.save(applicationStatus);
@@ -72,6 +85,7 @@ public class ApplicationService implements ApplicationServiceInterface {
         ApplicationModel application = new ApplicationModel();
         application.setPosition(position);
         application.setCandidate(candidate);
+        application.setMatchScore(score);
         application.setIsShortlisted(false);
         application.setApplicationStatus(savedApplicationStatus);
 
@@ -94,6 +108,8 @@ public class ApplicationService implements ApplicationServiceInterface {
         applicationStatus.setApplicationStatus(ApplicationStatus.valueOf("SHORTLISTED"));
         applicationStatus.setApplicationFeedback("Your Application Is Shortlisted For Next Round !");
         application.setApplicationStatus(applicationStatus);
+        UserModel currentUser = (UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        application.setShortlistedBy(currentUser);
         application.setIsShortlisted(true);
 
         application.getPosition().getPositionRounds().forEach(
@@ -113,12 +129,100 @@ public class ApplicationService implements ApplicationServiceInterface {
     }
 
     @Override
+    @Cacheable(value = "applicationData",key = "'mapped_applications_positionId_'+#positionId+'page_'+#page+'_size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getMatchedApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Mapped applications Of Position : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
+                applicationRepository.findByApplicationStatusApplicationStatusAndPositionPositionId(ApplicationStatus.MAPPED,positionId,getPageable(page, size, sortBy, sortDir)));
+        logger.info("Fetched {} Mapped applications of PositionId : {} ", response.getData().size(),positionId);
+        return response;
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "applicationData", allEntries = true),
+    })
+    public Integer matchApplicationsForPosition(Integer positionId, Integer thresholdScore) {
+
+        logger.info("Starting automatic matching for PositionId: {} with threshold score: {}", positionId, thresholdScore);
+
+        PositionModel position = positionRepository.findById(positionId).orElseThrow(() -> {
+            logger.error("Position not found for PositionId: {}", positionId);
+            return new ResourceNotFoundException("Position", "positionId", positionId.toString());
+        });
+
+        Double heistScore = 0.0;
+
+        logger.debug("Fetched position details: {} - {}", position.getPositionId(), position.getPositionTitle());
+
+        List<CandidateModel> candidates = candidateRepository.findAll();
+        logger.debug("Total candidates fetched for matching: {}", candidates.size());
+
+        List<ApplicationResponseDto> matchedApplications = new ArrayList<>();
+
+        for(CandidateModel candidate : candidates){
+
+            logger.debug("Checking candidateId: {} for existing application against positionId: {}",
+                    candidate.getCandidateId(), position.getPositionId());
+
+            if (applicationRepository.existsByCandidateCandidateIdAndPositionPositionId(
+                    candidate.getCandidateId(), position.getPositionId())) {
+
+                logger.info("CandidateId: {} already has an application for PositionId: {} → Skipping",
+                        candidate.getCandidateId(), position.getPositionId());
+                continue;
+            }
+
+            double score = matchingScoreService.calculateMatchingScore(candidate, position);
+
+            if(score > heistScore)
+                heistScore = score;
+            logger.info("Matching score calculated → CandidateId: {}, PositionId: {}, Score: {}",
+                    candidate.getCandidateId(), position.getPositionId(), score);
+
+            if (score >= thresholdScore) {
+                logger.info(
+                        "CandidateId: {} PASSED threshold (Score: {} ≥ Threshold: {}) → Creating mapped application",
+                        candidate.getCandidateId(), score, thresholdScore
+                );
+                matchedApplications.add(createApplication(candidate, position, ApplicationStatus.MAPPED, score));
+            } else {
+                logger.debug(
+                        "CandidateId: {} FAILED threshold (Score: {} < Threshold: {})",
+                        candidate.getCandidateId(), score, thresholdScore
+                );
+            }
+        }
+
+        logger.info("Matching process completed for PositionId: {} → Total matched applications: {}",
+                positionId, matchedApplications.size());
+
+        if(matchedApplications.isEmpty()){
+            throw new ResourceNotFoundException("Match Applications",thresholdScore + " Threshold Heist Score Is",heistScore.toString());
+        }
+
+        return matchedApplications.size();
+    }
+
+
+    @Override
     @Cacheable(value = "applicationData",key = "'shortlisted_applications_page_'+#page+'_size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
     public PaginatedResponse<ApplicationResponseDto> getAllShortlistedApplications(Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all Shortlisted applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
         PaginatedResponse<ApplicationResponseDto> response =
                 getPaginatedApplications(applicationRepository.findByIsShortlistedTrue(getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} Shortlisted applications ", response.getData().size());
+        return response;
+    }
+
+    @Override
+    @Cacheable(value = "applicationData",key = "'shortlisted_applications_recruiter_id'+#recruiterId+'_page_'+#page+'_size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getAllShortlistedApplicationsByRecruiter(Integer recruiterId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Shortlisted applications By Recruiter- page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findRecruiterShortlists(recruiterId,getPageable(page, size, sortBy, sortDir)));
+        logger.info("Fetched {} Shortlisted applications By Recruiter", response.getData().size());
         return response;
     }
 
@@ -189,6 +293,16 @@ public class ApplicationService implements ApplicationServiceInterface {
     }
 
     @Override
+    @Cacheable(value = "applicationData",key = "'applications_recruiter_id'+#recruiterId+'_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getAllApplicationsByRecruiter(Integer recruiterId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all applications By Recruiter- page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findRecruiterApplications(recruiterId,getPageable(page, size, sortBy, sortDir)));
+        logger.info("Fetched {} applications By Recruiter", response.getData().size());
+        return response;
+    }
+
+    @Override
     @Cacheable(value = "applicationData",key = "'applications_applied_'+#candidateId")
     public List<Integer> getCandidateApplicationId(Integer candidateId) {
         return applicationRepository.findAppliedPositionIdsByCandidateId(candidateId);
@@ -211,7 +325,7 @@ public class ApplicationService implements ApplicationServiceInterface {
     @Cacheable(value = "applicationData",key = "'application_count'")
     public Long countTotalApplications() {
         logger.info("Counting total applications");
-        Long count = applicationRepository.countApplications();
+        Long count = applicationRepository.count();
         logger.info("Total applications count: {}", count);
         return count;
     }
@@ -233,6 +347,26 @@ public class ApplicationService implements ApplicationServiceInterface {
         PaginatedResponse<ApplicationResponseDto> response = getPaginatedApplications(
                 applicationRepository.findByPositionPositionId(positionId,getPageable(page, size, sortBy, sortDir)));
         logger.info("Fetched {} applications of positionId : {}", response.getData().size(),positionId);
+        return response;
+    }
+
+    @Override
+    @Cacheable(value = "applicationData",key = "'reviewer_'+#reviewerId+'_applications_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getAllShortlistedApplicationsByReviewer(Integer reviewerId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Shortlisted applications By Reviewer - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findShortlistsByReviewer(reviewerId,getPageable(page, size, sortBy, sortDir)));
+        logger.info("Fetched {} Shortlisted applications By Reviewer", response.getData().size());
+        return response;
+    }
+
+    @Override
+    @Cacheable(value = "applicationData",key = "'reviewer_'+#reviewerId+'_positionId_'+#positionId+'_applications_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<ApplicationResponseDto> getPositionShortlistedApplicationsByReviewer(Integer positionId, Integer reviewerId, Integer page, Integer size, String sortBy, String sortDir) {
+        logger.info("Fetching all Positions Shortlisted applications By Reviewer - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
+        PaginatedResponse<ApplicationResponseDto> response =
+                getPaginatedApplications(applicationRepository.findByShortlistedByPositionAndReviewer(positionId,reviewerId,getPageable(page, size, sortBy, sortDir)));
+        logger.info("Fetched {} Shortlisted applications By Position And Reviewer", response.getData().size());
         return response;
     }
 
@@ -265,10 +399,13 @@ public class ApplicationService implements ApplicationServiceInterface {
         dto.setApplicationId(entity.getApplicationId());
         dto.setIsShortlisted(entity.getIsShortlisted());
         dto.setPositionId(entity.getPosition().getPositionId());
+        dto.setMatchingScore(entity.getMatchScore());
         dto.setCandidateId(entity.getCandidate().getCandidateId());
         dto.setApplicationStatus(converter(entity.getApplicationStatus()));
-        if(entity.getIsShortlisted() == true)
+        if(entity.getIsShortlisted() == true){
+            dto.setShortlistedBy(converter(entity.getShortlistedBy()));
             dto.setApplicationRounds(entity.getRounds().stream().map(this::converter).toList());
+        }
         return dto;
     }
 
@@ -323,6 +460,8 @@ public class ApplicationService implements ApplicationServiceInterface {
 
 
     private UserMinimalResponseDto converter(UserModel entity) {
+        if(entity == null)
+            return null;
         logger.trace("Mapping UserModel -> UserResponseDto for ID: {}", entity.getUserId());
         UserMinimalResponseDto userResponseDto = new UserMinimalResponseDto();
         userResponseDto.setUserId(entity.getUserId());

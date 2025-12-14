@@ -26,7 +26,6 @@ import java.util.List;
 @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class PositionModel extends BaseEntity {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer positionId;
@@ -45,6 +44,8 @@ public class PositionModel extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private PositionType positionType;
+
+    private Integer positionMinYearsOfExperience;
 
     @Column(nullable = false)
     private Double positionSalary;

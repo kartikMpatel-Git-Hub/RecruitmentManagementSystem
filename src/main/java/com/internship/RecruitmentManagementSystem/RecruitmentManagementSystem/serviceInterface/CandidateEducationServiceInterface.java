@@ -3,7 +3,6 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateEducationDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface CandidateEducationServiceInterface {
