@@ -71,4 +71,56 @@ public class HtmlTemplateBuilder {
                 .replace("{{password}}", password);
     }
 
+    public String buildCandidateDocumentVerificationTemplate(
+            String candidateName,
+            String jobRole,
+            String requiredDocumentsHtml
+    ) {
+
+        String template = loadTemplate("candidate-document-verification.html");
+
+        return template
+                .replace("{{companyName}}", "Test Company Pvt.Ltd")
+                .replace("{{candidateName}}", candidateName)
+                .replace("{{jobRole}}", jobRole)
+                .replace("{{requiredDocuments}}", requiredDocumentsHtml);
+    }
+
+    public String buildCandidateHiredTemplate(
+            String candidateName,
+            String jobRole,
+            String workLocation
+    ) {
+
+        String template = loadTemplate("candidate-hired.html");
+
+        return template
+                .replace("{{companyName}}", "Test Company Pvt.Ltd")
+                .replace("{{candidateName}}", candidateName)
+                .replace("{{jobRole}}", jobRole)
+                .replace("{{joiningDate}}", "Will Send Soon")
+                .replace("{{reportingManager}}", "Senior Hr")
+                .replace("{{workLocation}}", workLocation);
+    }
+
+    public String buildDocumentRejectMail(
+            String companyName,
+            String candidateName,
+            String jobRole,
+            String rejectedDocumentsHtml,
+            String documentUploadLink
+    ) {
+
+        String template = loadTemplate("candidate-document-rejected.html");
+
+        return template
+                .replace("{{companyName}}", companyName)
+                .replace("{{candidateName}}", candidateName)
+                .replace("{{jobRole}}", jobRole)
+                .replace("{{rejectedDocuments}}", rejectedDocumentsHtml)
+                .replace("{{documentUploadLink}}", documentUploadLink);
+    }
+
+
+
 }

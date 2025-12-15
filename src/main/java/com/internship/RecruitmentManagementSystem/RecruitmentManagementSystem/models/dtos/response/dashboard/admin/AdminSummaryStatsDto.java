@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class AdminSummaryStatsDto {
     private long totalCandidates;
+    private long totalRequests;
     private long newCandidatesToday;
     private long totalApplications;
     private long totalUsers;

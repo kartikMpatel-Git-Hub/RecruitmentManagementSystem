@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.register.RegisterUserDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserChangePasswordDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserUpdateDto;
@@ -10,7 +11,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.pa
 
 public interface UserServiceInterface {
 
-    UserResponseDto registerUser(UserCreateDto userDto, String roleName);
+    Object registerUser(RegisterUserDto newUser);
     UserResponseDto getUser(Integer userId);
     PaginatedResponse<UserResponseDto> getUsers(Integer page,Integer size,String sortBy,String sortDir);
     PaginatedResponse<UserResponseDto> getCandidates(Integer page,Integer size,String sortBy,String sortDir);

@@ -244,6 +244,15 @@ public class ApplicationController {
                 HttpStatus.OK);
     }
 
+    @PatchMapping("/{applicationId}/document-verification")
+    public ResponseEntity<?> moveToDocumentVerificationApplication(@PathVariable Integer applicationId) {
+        log.info("move To Document Verification application with applicationId: {}", applicationId);
+        applicationService.moveToDocumentVerification(applicationId);
+        log.info("move To Document Verification application for applicationId: {}", applicationId);
+        return new ResponseEntity<>("Application With applicationId : "+applicationId+" move To Document Verification Successfully !",
+                HttpStatus.OK);
+    }
+
     @DeleteMapping("/{applicationId}")
     public ResponseEntity<?> deleteApplication(@PathVariable Integer applicationId) {
         log.info("Deleting application with applicationId: {}", applicationId);

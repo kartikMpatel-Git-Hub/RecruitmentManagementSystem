@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Offer Confirmation</title>
+</head>
+
+<body style="margin:0; padding:0; font-family:Arial, sans-serif; background-color:#f5f6fa;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f6fa; padding:20px 0;">
+    <tr>
+        <td align="center">
+
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background:#ffffff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); overflow:hidden;">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background:#198754; padding:20px; text-align:center; color:#ffffff;">
+                        <h2 style="margin:0;">Welcome to {{companyName}}</h2>
+                        <p style="margin:5px 0 0;">You’re Hired 🎉</p>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:30px; color:#333333;">
+                        <h3>Dear {{candidateName}},</h3>
+
+                        <p>
+                            We are pleased to inform you that your document verification
+                            has been <b>successfully completed</b>.
+                        </p>
+
+                        <p>
+                            We are delighted to welcome you as a
+                            <b>{{jobRole}}</b> at <b>{{companyName}}</b>.
+                        </p>
+
+                        <div style="background:#e9f7ef; padding:15px; border-left:4px solid #198754; margin:20px 0;">
+                            <b>Joining Details:</b><br>
+                            Joining Date: {{joiningDate}}<br>
+                            Reporting To: {{reportingManager}}<br>
+                            Location: {{workLocation}}
+                        </div>
+
+                        <p>
+                            Our HR team will contact you shortly with onboarding and offer
+                            letter details.
+                        </p>
+
+                        <p>Once again, congratulations!</p>
+
+                        <p style="margin-top:25px;">
+                            Warm regards,<br>
+                            <b>HR Team</b><br>
+                            {{companyName}}
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background:#f1f3f5; padding:15px; text-align:center; font-size:12px; color:#555;">
+                        ©2025 All rights reserved.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

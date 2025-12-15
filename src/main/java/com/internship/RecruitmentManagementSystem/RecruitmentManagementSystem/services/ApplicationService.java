@@ -14,11 +14,15 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.skill.SkillResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserMinimalResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ApplicationStatus;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.DocumentVerificationStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.RoundResult;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ApplicationServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.HtmlTemplateBuilder;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +37,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,15 +51,19 @@ public class ApplicationService implements ApplicationServiceInterface {
     private final ApplicationRepository applicationRepository;
     private final PositionRepository positionRepository;
     private final ApplicationStatusRepository applicationStatusRepository;
+    private final DocumentVerificationRepository documentVerificationRepository;
     private final CandidateRepository candidateRepository;
     private final RoundRepository roundRepository;
+    private final HtmlTemplateBuilder templateBuilder;
     private final MatchingScoreService matchingScoreService;
+    private final EmailService emailService;
 
     @Override
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "applicationData",allEntries = true),
             @CacheEvict(value = "positionData",allEntries = true),
+            @CacheEvict(value = "roundData", allEntries = true)
     })
     public ApplicationResponseDto addApplication(ApplicationCreateDto newApplication) {
         logger.info("Adding new application for positionId: {}", newApplication.getPositionId());
@@ -98,6 +107,8 @@ public class ApplicationService implements ApplicationServiceInterface {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "applicationData",allEntries = true),
+            @CacheEvict(value = "positionData",allEntries = true),
+            @CacheEvict(value = "roundData", allEntries = true)
     })
     public void shortlistApplication(Integer applicationId) {
         ApplicationModel application = applicationRepository.findById(applicationId).orElseThrow(
@@ -129,6 +140,40 @@ public class ApplicationService implements ApplicationServiceInterface {
     }
 
     @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "applicationData",allEntries = true),
+            @CacheEvict(value = "positionData",allEntries = true),
+            @CacheEvict(value = "roundData", allEntries = true)
+    })
+    public void moveToDocumentVerification(Integer applicationId) {
+        ApplicationModel application = applicationRepository.findById(applicationId).orElseThrow(
+                ()->new ResourceNotFoundException("Application","applicationId",applicationId.toString())
+        );
+
+        ApplicationStatusModel applicationStatus = application.getApplicationStatus();
+        applicationStatus.setApplicationStatus(ApplicationStatus.DOCUMENT_VERIFICATION);
+        applicationStatus.setApplicationFeedback("You Are successfully Pass All Rounds !");
+        application.setApplicationStatus(applicationStatus);
+
+        applicationRepository.save(application);
+
+        DocumentVerificationModel documentVerificationModel = new DocumentVerificationModel();
+        documentVerificationModel.setApplication(application);
+        documentVerificationModel.setHrRemarks("Submit Your Document For Evaluation !");
+        documentVerificationModel.setVerificationStatus(DocumentVerificationStatus.PENDING);
+        documentVerificationModel.setVerifiedAt(LocalDateTime.now());
+        documentVerificationModel.setVerifiedBy((UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+
+        documentVerificationRepository.save(documentVerificationModel);
+
+        mailToCandidate(application.getCandidate().getUser().getUsername(),
+                    application.getCandidate().getUser().getUserEmail(),
+                    application.getPosition().getPositionTitle()
+                );
+    }
+
+    @Override
     @Cacheable(value = "applicationData",key = "'mapped_applications_positionId_'+#positionId+'page_'+#page+'_size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
     public PaginatedResponse<ApplicationResponseDto> getMatchedApplications(Integer positionId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all Mapped applications Of Position : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
@@ -141,7 +186,9 @@ public class ApplicationService implements ApplicationServiceInterface {
     @Override
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "applicationData", allEntries = true),
+            @CacheEvict(value = "applicationData",allEntries = true),
+            @CacheEvict(value = "positionData",allEntries = true),
+            @CacheEvict(value = "roundData", allEntries = true)
     })
     public Integer matchApplicationsForPosition(Integer positionId, Integer thresholdScore) {
 
@@ -249,7 +296,9 @@ public class ApplicationService implements ApplicationServiceInterface {
     @Override
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "applicationData",allEntries = true)
+            @CacheEvict(value = "applicationData",allEntries = true),
+            @CacheEvict(value = "positionData",allEntries = true),
+            @CacheEvict(value = "roundData", allEntries = true)
     })
     public ApplicationStatusResponseDto updateApplicationStatus(Integer applicationId,Integer applicationStatusId, ApplicationStatusUpdateDto newApplicationStatus) {
         ApplicationStatusModel existingApplicationStatus = applicationStatusRepository.findById(applicationStatusId).orElseThrow(
@@ -310,7 +359,9 @@ public class ApplicationService implements ApplicationServiceInterface {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "applicationData",allEntries = true)
+            @CacheEvict(value = "applicationData",allEntries = true),
+            @CacheEvict(value = "positionData",allEntries = true),
+            @CacheEvict(value = "roundData", allEntries = true)
     })
     public void deleteApplication(Integer applicationId) {
         logger.info("Deleting application with ID: {}", applicationId);
@@ -458,6 +509,25 @@ public class ApplicationService implements ApplicationServiceInterface {
         return dto;
     }
 
+    private void mailToCandidate(String candidateName,
+                                 @NotEmpty(message = "Email Can't Be Empty !")
+                                 @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",message = "Invalid email format!")
+                                 String candidateEmail,
+                                 String jobRole
+                                 ) {
+        String requireDocument = "<li>Aadhaar Card</li>" +
+                "<li>PAN Card</li>" +
+                "<li>Educational Certificates</li>" +
+                "<li>Experience Letter (if applicable)</li>";
+        String mailBody = templateBuilder.buildCandidateDocumentVerificationTemplate(candidateName,jobRole,requireDocument);
+
+        emailService.sendMail(
+                "kartikpatel7892@gmail.com",
+                candidateEmail,
+                "Document Verification Required",
+                mailBody
+        );
+    }
 
     private UserMinimalResponseDto converter(UserModel entity) {
         if(entity == null)

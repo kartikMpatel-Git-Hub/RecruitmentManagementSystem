@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.register.RegisterUserDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserChangePasswordDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
@@ -93,12 +94,11 @@ public class AuthenticationController {
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid UserCreateDto request,
-                                             @RequestPart(value = "image") MultipartFile userImage,
-                                             @RequestPart(value = "role") String userRole) {
+    public ResponseEntity<?> registerNewUser(@RequestPart("user") @Valid RegisterUserDto request,
+                                             @RequestPart(value = "image") MultipartFile userImage) {
         logger.info("User registration API called for username: {}", request.getUserName());
 
-        List<String> errors = validateRegistrationRequest(request, userImage, userRole);
+        List<String> errors = validateRegistrationRequest(request, userImage);
         if (!errors.isEmpty()) {
             logger.warn("Registration validation failed for user: {} | Errors: {}", request.getUserName(), errors);
             return createErrorResponse(errors);
@@ -111,7 +111,7 @@ public class AuthenticationController {
 
             request.setUserImageUrl(fileName);
             logger.debug("Creating user in database for username: {}", request.getUserName());
-            var registeredUser = userService.registerUser(request, userRole);
+            var registeredUser = userService.registerUser(request);
 
             logger.info("User registration successful for username: {}", request.getUserName());
             return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
@@ -149,13 +149,13 @@ public class AuthenticationController {
         return errors;
     }
 
-    private List<String> validateRegistrationRequest(UserCreateDto request, MultipartFile userImage, String userRole) {
+    private List<String> validateRegistrationRequest(RegisterUserDto request, MultipartFile userImage) {
         List<String> errors = new ArrayList<>();
         if (userImage == null || userImage.isEmpty()) errors.add(IMAGE_REQUIRED);
         if (isNullOrEmpty(request.getUserName())) errors.add(USERNAME_REQUIRED);
         if (isNullOrEmpty(request.getUserEmail())) errors.add(EMAIL_REQUIRED);
         if (isNullOrEmpty(request.getUserPassword())) errors.add(PASSWORD_REQUIRED);
-        if (isNullOrEmpty(userRole)) errors.add(ROLE_REQUIRED);
+        if (isNullOrEmpty(request.getRole())) errors.add(ROLE_REQUIRED);
         return errors;
     }
 

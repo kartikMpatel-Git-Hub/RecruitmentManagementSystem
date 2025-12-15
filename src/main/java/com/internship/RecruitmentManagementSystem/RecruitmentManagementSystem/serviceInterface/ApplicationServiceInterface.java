@@ -14,7 +14,7 @@ public interface ApplicationServiceInterface {
 
     void shortlistApplication(Integer applicationId);
 
-
+    void moveToDocumentVerification(Integer applicationId);
 
     PaginatedResponse<ApplicationResponseDto> getMatchedApplications(Integer positionId,Integer page,Integer size,String sortBy,String sortDir);
 

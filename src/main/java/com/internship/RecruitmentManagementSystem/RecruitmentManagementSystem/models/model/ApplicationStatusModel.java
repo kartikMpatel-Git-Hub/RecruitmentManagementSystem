@@ -27,6 +27,7 @@ public class ApplicationStatusModel extends BaseEntity {
     private Integer applicationStatusId;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     private ApplicationStatus applicationStatus;
 
     @Column(columnDefinition = "TEXT")

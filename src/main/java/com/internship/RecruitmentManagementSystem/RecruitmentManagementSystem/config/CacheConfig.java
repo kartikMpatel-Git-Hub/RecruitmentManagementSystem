@@ -44,7 +44,9 @@ public class CacheConfig {
                 "shortlistedApplicationData",
                 "roundData",
                 "interviewData",
-                "bulkUploadJobData"
+                "bulkUploadJobData",
+                "registerRequest",
+                "documentVerification"
         );
         cacheManager.setCaffeine(caffeine);
         return cacheManager;

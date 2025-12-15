@@ -35,7 +35,7 @@ public class PositionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','HR','REVIEWER')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','REVIEWER','CANDIDATE')")
     public ResponseEntity<?> getAllPositions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,

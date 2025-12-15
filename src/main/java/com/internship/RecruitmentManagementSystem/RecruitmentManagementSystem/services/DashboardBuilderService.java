@@ -48,6 +48,7 @@ public class DashboardBuilderService implements DashboardBuilderServiceInterface
     private final CandidateEducationRepository candidateEducationRepository;
     private final UniversityRepository universityRepository;
     private final DegreeRepository degreeRepository;
+    private final RegisterRepository registerRepository;
 
     @Override 
     public  HrSummaryStatsDto buildHrSummaryStats() {
@@ -290,6 +291,7 @@ public class DashboardBuilderService implements DashboardBuilderServiceInterface
         long newCandidatesToday = candidateRepository.countByCreatedAtBetween(startOfDay, endOfDay);
         long totalApplications = applicationRepository.count();
         long totalUsers = userRepository.count();
+        long totalRequests = registerRepository.count();
         long upcomingInterviewsCount = interviewRepository.countUpcomingInterviews(today, currentTime);
         long totalOpenPositions = positionRepository.countActivePosition();
         long totalUniversities = universityRepository.count();
@@ -298,6 +300,7 @@ public class DashboardBuilderService implements DashboardBuilderServiceInterface
 
         AdminSummaryStatsDto dto = new AdminSummaryStatsDto();
         dto.setTotalCandidates(totalCandidates);
+        dto.setTotalRequests(totalRequests);
         dto.setNewCandidatesToday(newCandidatesToday);
         dto.setTotalApplications(totalApplications);
         dto.setTotalUsers(totalUsers);

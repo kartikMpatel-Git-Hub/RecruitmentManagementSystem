@@ -6,6 +6,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadJobRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadRowResultRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.AsyncServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.BulkUploadCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -13,6 +14,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +31,7 @@ public class AsyncService implements AsyncServiceInterface {
 
     private final BulkUploadRowResultRepository bulkUploadRowResultRepository;
     private final BulkCandidateService candidateService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Async
     public void processAsync(BulkUploadJob job, byte[] fileByte,String fileName) {
@@ -89,6 +92,12 @@ public class AsyncService implements AsyncServiceInterface {
             job.setCompletedAt(LocalDateTime.now());
 
             bulkUploadJobRepository.save(job);
+
+            eventPublisher.publishEvent(
+                    new BulkUploadCompletedEvent(job.getJobId())
+            );
+
+            logger.info("Bulk upload completed for Job ID: {}", job.getJobId());
 
         } catch (Exception e) {
             logger.error("Unexpected error while processing Job ID {}: {}", job.getJobId(), e.getMessage());

@@ -5,15 +5,19 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ex
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceAlreadyExistsException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.register.RegisterUserDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserChangePasswordDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.register.RegisterUserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.role.RoleResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RegisterModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoleModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.CandidateRepository;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RegisterRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RoleRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.UserRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.UserServiceInterface;
@@ -41,6 +45,7 @@ public class UserService implements UserServiceInterface {
     private static final String EMAIL_EXISTS = "Email already exists";
 
     private final UserRepository userRepository;
+    private final RegisterRepository registerRepository;
     private final CandidateRepository candidateRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
@@ -51,34 +56,44 @@ public class UserService implements UserServiceInterface {
     @Caching(evict = {
             @CacheEvict(value = "userData", allEntries = true),
             @CacheEvict(value = "userCandidateData", allEntries = true),
-            @CacheEvict(value = "userNonCandidateData", allEntries = true)
+            @CacheEvict(value = "userNonCandidateData", allEntries = true),
+            @CacheEvict(value = "registerRequest", allEntries = true)
     })
-    public UserResponseDto registerUser(UserCreateDto userDto, String roleName) {
+    public Object registerUser(RegisterUserDto userDto) {
         logger.info("Attempting to register new user with username: {}", userDto.getUserName());
         validateNewUser(userDto);
         logger.debug("Validation successful for new user: {}", userDto.getUserName());
-        return register(userDto, roleName);
+        return register(userDto);
     }
 
     @Transactional
-    private UserResponseDto register(UserCreateDto userDto, String roleName) {
-        logger.debug("Starting transactional registration for user: {} with role: {}", userDto.getUserName(), roleName);
-        UserModel user = convertor(userDto);
-        Integer roleId = AppConstant.getRoleId(roleName);
+    private Object register(RegisterUserDto userDto) {
+        logger.debug("Starting transactional registration for user: {} with role: {}", userDto.getUserName(), userDto.getRole());
+        Integer roleId = AppConstant.getRoleId(userDto.getRole());
+        RoleModel role = findRoleById(roleId);
+        if (userDto.getRole().equals("CANDIDATE")) {
+            UserModel userModel = convertor(userDto);
 
-        user.setUserPassword(passwordEncoder.encode(userDto.getUserPassword()));
-        RoleModel role = findRoleById(roleId, roleName);
-        user.setRole(role);
+            userModel.setUserPassword(passwordEncoder.encode(userDto.getUserPassword()));
+            userModel.setRole(role);
 
-        UserModel savedUser = userRepository.save(user);
-        logger.info("User registered successfully with ID: {} and Role: {}", savedUser.getUserId(), roleName);
+            UserModel savedUser = userRepository.save(userModel);
 
-        if (roleName.equals("CANDIDATE")) {
             logger.debug("Registering candidate profile for user ID: {}", savedUser.getUserId());
             candidateService.register(savedUser);
-        }
 
-        return convertor(savedUser);
+            return convertor(savedUser);
+        }else{
+            RegisterModel user = convertorToRegisterModel(userDto);
+
+            user.setUserPassword(passwordEncoder.encode(userDto.getUserPassword()));
+            user.setRole(role);
+
+            RegisterModel savedUser = registerRepository.save(user);
+
+            logger.info("User registered Request Add successfully with ID: {} and Role: {}", savedUser.getRegisterId(),role.getRole());
+            return savedUser;
+        }
     }
 
     @Override
@@ -204,14 +219,16 @@ public class UserService implements UserServiceInterface {
         return convertor(currentUser);
     }
 
-    private void validateNewUser(UserCreateDto userDto) {
+    private void validateNewUser(RegisterUserDto userDto) {
         logger.debug("Validating new user for duplicates: username={}, email={}", userDto.getUserName(), userDto.getUserEmail());
 
-        if (userRepository.existsByUserName(userDto.getUserName())) {
+        if (userRepository.existsByUserName(userDto.getUserName())
+                || registerRepository.existsByUserName(userDto.getUserName())) {
             logger.error("Username already exists: {}", userDto.getUserName());
             throw new ResourceAlreadyExistsException(USERNAME_EXISTS);
         }
-        if (userRepository.existsByUserEmail(userDto.getUserEmail())) {
+        if (userRepository.existsByUserEmail(userDto.getUserEmail())
+                || registerRepository.existsByUserEmail(userDto.getUserEmail())) {
             logger.error("Email already exists: {}", userDto.getUserEmail());
             throw new ResourceAlreadyExistsException(EMAIL_EXISTS);
         }
@@ -226,12 +243,12 @@ public class UserService implements UserServiceInterface {
                 });
     }
 
-    private RoleModel findRoleById(Integer roleId, String roleName) {
+    private RoleModel findRoleById(Integer roleId) {
         logger.debug("Fetching role from DB by ID: {}", roleId);
         return roleRepository.findById(roleId)
                 .orElseThrow(() -> {
-                    logger.error("Role not found: {}", roleName);
-                    return new ResourceNotFoundException("Role", "role", roleName);
+                    logger.error("Role not found: {}", roleId);
+                    return new ResourceNotFoundException("Role", "role", roleId.toString());
                 });
     }
 
@@ -278,8 +295,27 @@ public class UserService implements UserServiceInterface {
 
     private UserModel convertor(UserCreateDto userDto) {
         logger.trace("Mapping UserCreateDto -> UserModel for username: {}", userDto.getUserName());
+
         return modelMapper.map(userDto, UserModel.class);
     }
+
+    private UserModel convertor(RegisterUserDto dto) {
+        logger.trace("Mapping RegisterUserDto -> UserModel for username: {}", dto.getUserName());
+        UserModel model = new UserModel();
+
+        model.setUserEmail(dto.getUserEmail());
+        model.setUserName(dto.getUserName());
+        model.setUserImageUrl(dto.getUserImageUrl());
+        model.setUserPassword(dto.getUserPassword());
+
+        return model;
+    }
+
+    private RegisterModel convertorToRegisterModel(RegisterUserDto userDto) {
+        logger.trace("Mapping RegisterUserDto -> RegisterModel for username: {}", userDto.getUserName());
+        return modelMapper.map(userDto, RegisterModel.class);
+    }
+
     private void passwordValidation(String password) {
         if (password.length() < 8) {
             logger.error("Password validation failed: less than 8 characters");
