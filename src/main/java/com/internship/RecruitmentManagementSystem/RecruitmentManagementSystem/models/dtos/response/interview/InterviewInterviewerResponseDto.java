@@ -11,5 +11,7 @@ public class InterviewInterviewerResponseDto {
 
     private UserMinimalResponseDto interviewer;
 
+    private Boolean isFeedbackGiven;
+
     private InterviewerFeedbackResponseDto interviewerFeedback;
 }

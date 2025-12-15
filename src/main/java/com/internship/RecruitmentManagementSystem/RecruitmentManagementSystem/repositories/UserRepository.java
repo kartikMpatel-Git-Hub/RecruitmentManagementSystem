@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<UserModel,Integer> {
     Boolean existsByUserName(String userName);
     Boolean existsByUserEmail(String userEmail);
 
+    long count();
+
     @Query("SELECT u FROM UserModel u WHERE LOWER(u.role.role) = 'candidate'")
     Page<UserModel> findCandidate(Pageable pageable);
 

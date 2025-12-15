@@ -1,7 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.other.ThreshHoldScore;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationStatusUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.ApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,6 +43,31 @@ public class ApplicationController {
                 HttpStatus.OK);
     }
 
+    @GetMapping("/mapped/position/{positionId}")
+    public ResponseEntity<?> getMatchedApplications(
+            @PathVariable Integer positionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        log.info("Fetching matched applications for positionId : {} - page: {}, size: {}, sortBy: {}, sortDir: {}",positionId, page, size, sortBy, sortDir);
+        ResponseEntity<?> response = new ResponseEntity<>(
+                applicationService.getMatchedApplications(positionId,page, size, sortBy, sortDir),
+                HttpStatus.OK);
+        log.info("Fetched matched applications for positionId : {}",positionId);
+        return response;
+    }
+
+    @PutMapping("/mapped/position/{positionId}")
+    public ResponseEntity<?> matchApplicationsForPosition(@PathVariable Integer positionId,
+                                                          @RequestBody ThreshHoldScore thresholdScore) {
+        log.info("Matching applications for positionId: {}", positionId);
+        var res = applicationService.matchApplicationsForPosition(positionId,thresholdScore.getThresholdScore());
+        log.info("Matched applications for positionId: {}", positionId);
+        return new ResponseEntity<>("Total "+ res +" Applications matched for positionId : " + positionId,
+                HttpStatus.OK);
+    }
+
     @GetMapping
     public ResponseEntity<?> getAllApplications(
             @RequestParam(defaultValue = "0") int page,
@@ -50,6 +79,24 @@ public class ApplicationController {
                 applicationService.getAllApplications(page, size, sortBy, sortDir),
                 HttpStatus.OK);
         log.info("Fetched applications successfully");
+        return response;
+    }
+
+    @GetMapping("/recruiter")
+    @PreAuthorize("hasAnyRole('RECRUITER')")
+    public ResponseEntity<?> getAllApplicationsByRecruiter(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        UserModel currentUser = (UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Integer recruiterId = currentUser.getUserId();
+        log.info("Fetching all applications By Recruiter- page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
+        ResponseEntity<?> response = new ResponseEntity<>(
+                applicationService.getAllApplicationsByRecruiter(recruiterId,page,size,sortBy,sortDir),
+                HttpStatus.OK);
+        log.info("Fetched applications By Recruiter successfully ");
         return response;
     }
 
@@ -114,6 +161,37 @@ public class ApplicationController {
         log.info("Fetched Shortlisted applications");
         return new ResponseEntity<>(application, HttpStatus.OK);
     }
+
+    @GetMapping("/shortlists/recruiter")
+    @PreAuthorize("hasAnyRole('RECRUITER')")
+    public ResponseEntity<?> getShortlistedApplicationByRecruiter(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        UserModel currentUser = (UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Integer recruiterId = currentUser.getUserId();
+        log.info("Fetching Shortlisted applications by Recruiter : {}",recruiterId);
+        var application = applicationService.getAllShortlistedApplicationsByRecruiter(recruiterId,page,size,sortBy,sortDir);
+        log.info("Fetched Shortlisted applications by Recruiter : {} ",recruiterId);
+        return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+
+    @GetMapping("/shortlists/reviewer")
+    @PreAuthorize("hasAnyRole('REVIEWER')")
+    public ResponseEntity<?> getShortlistedApplicationByReviewer(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        UserModel currentUser = (UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Integer reviewerId = currentUser.getUserId();
+        log.info("Fetching Shortlisted applications by Reviewer : {}",reviewerId);
+        var application = applicationService.getAllShortlistedApplicationsByReviewer(reviewerId,page,size,sortBy,sortDir);
+        log.info("Fetched Shortlisted applications by Reviewer : {} ",reviewerId);
+        return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+
     @GetMapping("/shortlists/candidate/{candidateId}")
     public ResponseEntity<?> getCandidateShortlistedApplication(
             @PathVariable Integer candidateId,
@@ -126,7 +204,9 @@ public class ApplicationController {
         log.info("Fetched Shortlisted applications with candidateId : {}",candidateId);
         return new ResponseEntity<>(application, HttpStatus.OK);
     }
+
     @GetMapping("/shortlists/position/{positionId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','RECRUITER')")
     public ResponseEntity<?> getPositionShortlistedApplication(
             @PathVariable Integer positionId,
             @RequestParam(defaultValue = "0") int page,
@@ -139,12 +219,37 @@ public class ApplicationController {
         return new ResponseEntity<>(application, HttpStatus.OK);
     }
 
+    @GetMapping("/shortlists/position/{positionId}/reviewer")
+    @PreAuthorize("hasAnyRole('REVIEWER')")
+    public ResponseEntity<?> getPositionShortlistedApplicationByReviewer(
+            @PathVariable Integer positionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "applicationId") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        UserModel currentUser = (UserModel) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Integer reviewerId = currentUser.getUserId();
+        log.info("Fetching Shortlisted application By Reviewer with positionId : {}",positionId);
+        var application = applicationService.getPositionShortlistedApplicationsByReviewer(positionId,reviewerId,page,size,sortBy,sortDir);
+        log.info("Fetched Shortlisted applications By Reviewer with positionId : {}",positionId);
+        return new ResponseEntity<>(application, HttpStatus.OK);
+    }
+
     @PatchMapping("/{applicationId}/shortlist")
     public ResponseEntity<?> shortlistApplication(@PathVariable Integer applicationId) {
         log.info("Shortlisting application with applicationId: {}", applicationId);
         applicationService.shortlistApplication(applicationId);
         log.info("Shortlisted application for applicationId: {}", applicationId);
         return new ResponseEntity<>("Application With applicationId : "+applicationId+" Shortlisted Successfully !",
+                HttpStatus.OK);
+    }
+
+    @PatchMapping("/{applicationId}/document-verification")
+    public ResponseEntity<?> moveToDocumentVerificationApplication(@PathVariable Integer applicationId) {
+        log.info("move To Document Verification application with applicationId: {}", applicationId);
+        applicationService.moveToDocumentVerification(applicationId);
+        log.info("move To Document Verification application for applicationId: {}", applicationId);
+        return new ResponseEntity<>("Application With applicationId : "+applicationId+" move To Document Verification Successfully !",
                 HttpStatus.OK);
     }
 

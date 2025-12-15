@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.application;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundResponseDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserMinimalResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,10 @@ public class ApplicationResponseDto {
     private ApplicationStatusResponseDto applicationStatus;
 
     private Boolean isShortlisted;
+
+    private UserMinimalResponseDto shortlistedBy;
+
+    private Double matchingScore;
 
     private List<RoundResponseDto> applicationRounds;
 

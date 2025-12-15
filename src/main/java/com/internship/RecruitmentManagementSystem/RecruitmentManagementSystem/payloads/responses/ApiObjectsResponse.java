@@ -1,6 +1,5 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.DegreeDto;
 import lombok.*;
 
 import java.util.List;

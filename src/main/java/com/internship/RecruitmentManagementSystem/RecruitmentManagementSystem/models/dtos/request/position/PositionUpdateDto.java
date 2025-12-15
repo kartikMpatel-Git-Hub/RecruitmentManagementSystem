@@ -19,6 +19,8 @@ public class PositionUpdateDto {
 
     private String positionLocation;
 
+    private Integer positionMinYearsOfExperience;
+
     private String positionLanguage;
 
     private Integer positionTotalOpening;

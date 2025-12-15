@@ -1,32 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ShortlistedApplicationDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ShortlistedApplicationStatusDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ShortlistedApplicationStaus;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.ApplicationModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.ShortlistedApplicationModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.ShortlistedApplicationStatusModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.ApplicationRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.ShortlistedApplicationRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.ShortlistedApplicationStatusRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ShortlistedApplicationServiceInterface;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

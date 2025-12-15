@@ -13,7 +13,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class RecruitmentManagementSystemApplication {
 
 	public static void main(String[] args) {
-
         SpringApplication.run(RecruitmentManagementSystemApplication.class, args);
 	}
 

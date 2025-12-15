@@ -65,6 +65,7 @@ public class PositionService implements PositionServiceInterface {
         position.setPositionTotalOpening(newPosition.getPositionTotalOpening());
         position.setPositionLocation(newPosition.getPositionLocation());
         position.setPositionType(newPosition.getPositionType());
+        position.setPositionMinYearsOfExperience(newPosition.getPositionMinYearsOfExperience());
         position.setPositionSalary(newPosition.getPositionSalary());
         position.setPositionStatus(positionStatus);
         position.setPositionLanguage(newPosition.getPositionLanguage());
@@ -132,6 +133,7 @@ public class PositionService implements PositionServiceInterface {
         if (newPosition.getPositionStatus() != null && newPosition.getPositionStatus().getPositionStatusReason() != null)
             oldPosition.getPositionStatus().setPositionStatusReason(newPosition.getPositionStatus().getPositionStatusReason());
         if (newPosition.getPositionLocation() != null) oldPosition.setPositionLocation(newPosition.getPositionLocation());
+        if(newPosition.getPositionMinYearsOfExperience() != null) oldPosition.setPositionMinYearsOfExperience(newPosition.getPositionMinYearsOfExperience());
         if (newPosition.getPositionSalary() != null) oldPosition.setPositionSalary(newPosition.getPositionSalary());
         if (newPosition.getPositionType() != null) oldPosition.setPositionType(newPosition.getPositionType());
         if (newPosition.getPositionLanguage() != null) oldPosition.setPositionLanguage(newPosition.getPositionLanguage());
@@ -296,6 +298,13 @@ public class PositionService implements PositionServiceInterface {
     }
 
     @Override
+    @Cacheable(value = "positionData", key = "'recruiterId_'+#recruiterId+'_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+    public PaginatedResponse<PositionResponseDto> getAllPositionsByRecruiter(Integer recruiterId,Integer page, Integer size, String sortBy, String sortDir) {
+        logger.debug("Fetching all positions By Recruiter page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
+        return getPaginatedPosition(positionRepository.findPositionByRecruiter(recruiterId,getPageable(page, size, sortBy, sortDir)));
+    }
+
+    @Override
     @Cacheable(value = "positionData", key = "'position_count'")
     public Long countActivePosition() {
         logger.debug("Counting all active positions");
@@ -363,6 +372,7 @@ public class PositionService implements PositionServiceInterface {
         dto.setPositionTotalOpening(entity.getPositionTotalOpening());
         dto.setPositionLocation(entity.getPositionLocation());
         dto.setPositionType(entity.getPositionType());
+        dto.setPositionMinYearsOfExperience(entity.getPositionMinYearsOfExperience());
         dto.setPositionSalary(entity.getPositionSalary());
         dto.setPositionLanguage(entity.getPositionLanguage());
         int applications = 0;
@@ -406,6 +416,7 @@ public class PositionService implements PositionServiceInterface {
         SkillResponseDto skill = new SkillResponseDto();
         skill.setSkillId(entity.getPositionRequiredSkill().getSkillId());
         skill.setSkill(entity.getPositionRequiredSkill().getSkill());
+        dto.setMinYearsOfExperience(entity.getMinYearsOfExperience());
         dto.setPositionSkill(skill);
         dto.setPositionRequirement(entity.getPositionRequirement());
         return dto;

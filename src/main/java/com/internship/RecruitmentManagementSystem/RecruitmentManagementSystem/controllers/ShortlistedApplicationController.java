@@ -1,14 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ShortlistedApplicationDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.ShortlistedApplicationStatusDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.ShortlistedApplicationService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 //@RestController
 //@RequestMapping("/shortlisted-applications")

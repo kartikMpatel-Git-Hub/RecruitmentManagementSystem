@@ -11,6 +11,9 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.ut
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.HtmlTemplateBuilder;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,77 +23,113 @@ import java.security.SecureRandom;
 @RequiredArgsConstructor
 public class BulkCandidateService {
 
+    private static final Logger logger = LoggerFactory.getLogger(BulkCandidateService.class);
+
     private final ExcelValidationService validationService;
     private final UserRepository userRepository;
     private final CandidateRepository candidateRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final HtmlTemplateBuilder  htmlTemplateBuilder;
+    private final HtmlTemplateBuilder htmlTemplateBuilder;
     private final EmailService emailService;
+
     private static final SecureRandom random = new SecureRandom();
 
     public void processSingleRow(Row row) {
-        int rowNum = row.getRowNum() + 1;
-        CandidateRowData data = extractRow(row, rowNum);
 
+        int rowNum = row.getRowNum() + 1;
+        logger.info("Processing row number: {}", rowNum);
+
+        CandidateRowData data = extractRow(row, rowNum);
+        logger.debug("Extracted data for row {}: {}", rowNum, data);
+
+        logger.debug("Validating user fields for row {}", rowNum);
         validationService.validateUser(data);
+
+        logger.debug("Validating candidate fields for row {}", rowNum);
         validationService.validateCandidate(data);
 
         if (!data.isValid()) {
-            throw new RuntimeException(String.join(", ", data.getError().getFieldErrors().values()));
+            String errorMsg = String.join(", ", data.getError().getFieldErrors().values());
+            logger.error("Row {} validation failed: {}", rowNum, errorMsg);
+            throw new RuntimeException(errorMsg);
         }
 
+        logger.debug("Fetching role: {}", data.getRoleName());
         RoleModel role = roleRepository.findByRole(data.getRoleName())
-                .orElseThrow(() -> new RuntimeException("Invalid role"));
+                .orElseThrow(() -> new RuntimeException("Invalid role: " + data.getRoleName()));
 
+        logger.debug("Mapping row {} to UserModel", rowNum);
         UserModel user = mapToUser(data, role);
+
         data.setUserPassword(user.getUserPassword());
-        user.setUserPassword(passwordEncoder.encode(user.getPassword()));
+        logger.debug("Encoding password for user: {}", data.getUserName());
+        user.setUserPassword(passwordEncoder.encode(user.getUserPassword()));
         userRepository.save(user);
 
+        logger.info("User created successfully for row {} with username: {}", rowNum, user.getUsername());
+
+        logger.debug("Mapping row {} to CandidateModel", rowNum);
         CandidateModel candidate = mapToCandidate(data, user);
         candidateRepository.save(candidate);
 
+        logger.info("Candidate saved successfully for row {} ({})", rowNum, data.getFirstName());
+
+        logger.info("Sending credential mail to candidate: {}", data.getUserEmail());
         mailToCandidate(data);
     }
 
     private void mailToCandidate(CandidateRowData data) {
-        String mailBody = htmlTemplateBuilder.buildCandidateCredentialTemplate(
-                data.getFirstName() + " " + data.getLastName(),
-                data.getUserName(),
-                data.getUserPassword()
-        );
+        try {
+            String mailBody = htmlTemplateBuilder.buildCandidateCredentialTemplate(
+                    data.getFirstName() + " " + data.getLastName(),
+                    data.getUserName(),
+                    data.getUserPassword()
+            );
 
-        emailService.sendMail(
-                "kartikpatel7892@gmail.com",
-                data.getUserEmail(),
-                "Account Credentials - Recruitment Management System",
-                mailBody
-        );
+            emailService.sendMail(
+                    "kartikpatel7892@gmail.com",
+                    data.getUserEmail(),
+                    "Account Credentials - Recruitment Management System",
+                    mailBody
+            );
+
+            logger.info("Email sent successfully to {}", data.getUserEmail());
+
+        } catch (Exception e) {
+            logger.error("Failed to send email to {}: {}", data.getUserEmail(), e.getMessage());
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
+        }
     }
 
     private CandidateRowData extractRow(Row row, int rowNum) {
+        logger.debug("Extracting Excel row {}", rowNum);
+
         CandidateRowData data = new CandidateRowData(rowNum);
+        data.setRoleName("CANDIDATE");
         data.setUserName(ExcelUtils.getString(row, 0));
         data.setUserEmail(ExcelUtils.getString(row, 1));
-        data.setRoleName(ExcelUtils.getString(row, 2));
+        data.setFirstName(ExcelUtils.getString(row, 2));
+        data.setMiddleName(ExcelUtils.getString(row, 3));
+        data.setLastName(ExcelUtils.getString(row, 4));
+        data.setPhone(ExcelUtils.getString(row, 5));
+        data.setGender(ExcelUtils.getString(row, 6));
+        data.setDob(ExcelUtils.getDate(row, 7));
+        data.setAddress(ExcelUtils.getString(row, 8));
+        data.setCity(ExcelUtils.getString(row, 9));
+        data.setState(ExcelUtils.getString(row, 10));
+        data.setCountry(ExcelUtils.getString(row, 11));
+        data.setZip(ExcelUtils.getString(row, 12));
+        data.setExperience(ExcelUtils.getInteger(row, 13));
 
-        data.setFirstName(ExcelUtils.getString(row, 3));
-        data.setMiddleName(ExcelUtils.getString(row, 4));
-        data.setLastName(ExcelUtils.getString(row, 5));
-        data.setPhone(ExcelUtils.getString(row, 6));
-        data.setGender(ExcelUtils.getString(row, 7));
-        data.setDob(ExcelUtils.getDate(row, 8));
-        data.setAddress(ExcelUtils.getString(row, 9));
-        data.setCity(ExcelUtils.getString(row, 10));
-        data.setState(ExcelUtils.getString(row, 11));
-        data.setCountry(ExcelUtils.getString(row, 12));
-        data.setZip(ExcelUtils.getString(row, 13));
-        data.setExperience(ExcelUtils.getInteger(row, 14));
+        logger.debug("Row {} extraction complete: {}", rowNum, data);
+
         return data;
     }
 
     private UserModel mapToUser(CandidateRowData d, RoleModel role) {
+        logger.debug("Mapping user for username: {}", d.getUserName());
+
         UserModel user = new UserModel();
         user.setUserName(d.getUserName());
         user.setUserEmail(d.getUserEmail());
@@ -100,10 +139,13 @@ public class BulkCandidateService {
         user.setUserAccountNonLocked(true);
         user.setUserCredentialsNonExpired(true);
         user.setUserEnabled(true);
+
         return user;
     }
 
     public static String generatePassword() {
+        logger.debug("Generating random password");
+
         String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String LOWER = "abcdefghijklmnopqrstuvwxyz";
         String DIGITS = "0123456789";
@@ -129,10 +171,15 @@ public class BulkCandidateService {
             pwdArray[j] = temp;
         }
 
-        return new String(pwdArray);
+        String finalPassword = new String(pwdArray);
+
+        logger.debug("Generated password (masked): ********");
+        return finalPassword;
     }
 
     private CandidateModel mapToCandidate(CandidateRowData d, UserModel user) {
+        logger.debug("Mapping candidate for user: {}", user.getUsername());
+
         CandidateModel c = new CandidateModel();
         c.setCandidateFirstName(d.getFirstName());
         c.setCandidateMiddleName(d.getMiddleName());
@@ -147,7 +194,7 @@ public class BulkCandidateService {
         c.setCandidateZipCode(d.getZip());
         c.setCandidateTotalExperienceInYears(d.getExperience());
         c.setUser(user);
+
         return c;
     }
 }
-

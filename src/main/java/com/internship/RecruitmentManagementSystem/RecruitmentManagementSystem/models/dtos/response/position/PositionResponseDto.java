@@ -1,5 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.position;
 
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserMinimalResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.degree.DegreeResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.PositionType;
@@ -28,6 +29,8 @@ public class PositionResponseDto {
 
     private String positionLanguage;
 
+    private Integer positionMinYearsOfExperience;
+
     private Integer positionTotalOpening;
 
     private PositionStatusResponseDto positionStatus;
@@ -41,4 +44,6 @@ public class PositionResponseDto {
     private UserResponseDto createdBy;
 
     private List<PositionRoundResponseDto> positionRounds;
+
+    private List<UserMinimalResponseDto> selectedCandidates;
 }

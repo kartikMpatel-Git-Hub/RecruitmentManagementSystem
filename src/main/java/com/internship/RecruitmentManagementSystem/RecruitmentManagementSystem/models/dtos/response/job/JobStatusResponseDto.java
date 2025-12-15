@@ -4,6 +4,8 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class JobStatusResponseDto {
@@ -12,6 +14,5 @@ public class JobStatusResponseDto {
     private int totalRows;
     private int successRows;
     private int failedRows;
-    private String successFilePath;
-    private String errorFilePath;
+    private List<BulkUploadRowResponseDto> rowDetails;
 }

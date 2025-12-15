@@ -180,7 +180,11 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST
         );
     }
-
+//    SomethingWrongException
+    @ExceptionHandler(SomethingWrongException.class)
+    public ResponseEntity<?> SomethingWrongExceptionHandler(SomethingWrongException ex) {
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+    }
 //    UnexpectedRollbackException
 //    @ExceptionHandler(UnexpectedRollbackException.class)
 //    public ResponseEntity<?> UnexpectedRollbackExceptionHandler(UnexpectedRollbackException ex) {

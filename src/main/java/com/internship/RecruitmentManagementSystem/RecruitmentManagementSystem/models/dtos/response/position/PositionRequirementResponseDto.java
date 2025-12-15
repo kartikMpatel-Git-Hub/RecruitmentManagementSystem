@@ -14,5 +14,7 @@ public class PositionRequirementResponseDto {
 
     private Integer position;
 
+    private Integer minYearsOfExperience;
+
     private Requirement positionRequirement;
 }

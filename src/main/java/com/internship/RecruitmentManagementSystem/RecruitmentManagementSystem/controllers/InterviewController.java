@@ -160,7 +160,7 @@ public class InterviewController {
         log.info("PUT /interviews/{}/feedback/{} -> Updating feedback for interviewFeedbackId={}",
                 interviewId, interviewFeedbackId, interviewFeedbackId);
 
-        var updatedInterview = interviewService.updateFeedbackById(interviewFeedbackId, updatingFeedback);
+        var updatedInterview = interviewService.updateFeedbackById(interviewId,interviewFeedbackId, updatingFeedback);
 
         log.info("Updated feedback for interviewFeedbackId={} in interviewId={}",
                 interviewFeedbackId, interviewId);

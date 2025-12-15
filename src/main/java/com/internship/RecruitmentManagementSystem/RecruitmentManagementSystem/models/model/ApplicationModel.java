@@ -41,7 +41,15 @@ public class ApplicationModel extends BaseEntity {
     @JoinColumn(name = "application_status_id", referencedColumnName = "application_status_id")
     private ApplicationStatusModel applicationStatus;
 
+    private double matchScore;
+
     private Boolean isShortlisted;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shortlisted_by")
+    private UserModel shortlistedBy;
+
+    private Boolean isSelected;
 
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
     private List<RoundModel> rounds = new ArrayList<>();
