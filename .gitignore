@@ -31,6 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### dev Side ###
-src/main/resources/application.properties
+application-local.properties
+.env
