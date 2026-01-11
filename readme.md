@@ -5,110 +5,119 @@ The system is built using **Spring Boot 3.5**, **Java 21**, **MySQL**, **JWT-bas
 
 ---
 
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Tech Stack](#tech-stack)
+3. [Features](#features)
+4. [Prerequisites](#prerequisites)
+5. [Quick Start (Clone & Run)](#quick-start-clone--run)
+6. [Environment / Configuration](#environment--configuration)
+7. [Default seeded credentials](#default-seeded-credentials)
+8. [Database Setup](#database-setup)
+9. [Run with Docker](#run-with-docker)
+10. [API Documentation (Swagger)](#api-documentation-swagger)
+
+---
+
+## Overview
+
+This repository contains a recruitment management backend service built with Spring Boot. It provides endpoints for user and role management, job postings, interviews, candidate tracking, and notification workflows.
+
 ## Tech Stack
 
-### Backend
+See original file for full details. Key items:
 
 * Java 21
-* Spring Boot 3.5.5
-* Spring MVC
+* Spring Boot 3.5.x
+* Spring Security (JWT)
 * Spring Data JPA (Hibernate)
-* Spring Security (JWT Authentication)
-* Spring Validation
-* Spring Mail (SMTP)
-* Spring Cache (Caffeine)
-* Spring AOP
-* Spring Retry
-
-### Database
-
-* MySQL 8+
-
-### Build Tool
-
+* MySQL
 * Maven
-
-### Utilities & Integrations
-
-* JWT (jjwt)
-* ModelMapper
-* MapStruct
-* Cloudinary (Image Uploads)
-* Apache POI (Excel processing)
-* SpringDoc OpenAPI (Swagger UI)
-* HikariCP (Connection Pooling)
 
 ---
 
 ## Features
 
-* Secure authentication using JWT
-* Role-based access control
-* Recruitment workflow management
-* Email notifications (Gmail SMTP)
-* Image upload and storage (Cloudinary / ImageKit)
-* API documentation via Swagger UI
-* Caching with Caffeine for performance optimization
-* Database connection pooling using HikariCP
-* Server response compression enabled
+* Role-based authentication and authorization (ADMIN, RECRUITER, HR, INTERVIEWER, CANDIDATE, etc.)
+* JWT-based auth with refresh token support
+* Email notifications for candidate workflows
+* Image upload (Cloudinary/ImageKit integration)
+* Caching (Caffeine)
+* Swagger API documentation
 
 ---
 
 ## Prerequisites
 
-Before running the project, ensure you have:
-
-* **Java 21**
-* **Maven 3.9+**
-* **MySQL 8+**
-* **Git**
+* Java 21 (JDK)
+* Maven 3.9+ (or use the included Maven wrapper)
+* MySQL 8+
+* Git
 
 ---
 
-## Project Setup
+## Quick Start (Clone & Run)
 
-### 1. Clone the Repository
+1. Clone the repository and change directory:
 
 ```bash
 git clone https://github.com/your-username/RecruitmentManagementSystem.git
 cd RecruitmentManagementSystem
 ```
 
----
+2. Copy or update properties (see [Environment / Configuration](#environment--configuration)).
 
-### 2. Database Configuration
+3. Run the application:
 
-Create a MySQL database:
+- On Windows (using included wrapper):
 
-```sql
-CREATE DATABASE recruitment_db;
+```powershell
+.\mvnw.cmd clean install; .\mvnw.cmd spring-boot:run
 ```
 
-Update the following properties in `application.properties` if needed:
+- On macOS / Linux:
+
+```bash
+./mvnw clean install && ./mvnw spring-boot:run
+```
+
+After startup, the server will be available at http://localhost:8080
+
+Notes:
+- If you already built the project once, you can run only the Spring Boot plugin: `mvnw spring-boot:run`.
+- The app prints a console message on successful startup: `Recruitment Management System Live On : http://localhost:8080`.
+
+---
+
+## Environment / Configuration
+
+This project uses Spring Boot configuration files located under `src/main/resources`. There are multiple profiles (for example `application-local.properties` and `application-prod.properties`). For local development, update `src/main/resources/application-local.properties` (or `application.properties`) with your local settings.
+
+Important configuration keys (examples):
 
 ```properties
+# Datasource
 spring.datasource.url=jdbc:mysql://localhost:3306/recruitment_db
 spring.datasource.username=root
 spring.datasource.password=YOUR_DB_PASSWORD
-```
 
----
+# JPA
+spring.jpa.hibernate.ddl-auto=update
 
-### 3. JWT Configuration
+# Frontend URL (CORS settings)
+app.frontend.url=YOUR_FRONTEND_URL
 
-JWT secret is required for authentication:
-
-```properties
+# JWT
 jwt.secret=YOUR_BASE64_SECRET
-```
+jwt.expiration-ms=3600000
 
-Use a strong Base64-encoded secret in production.
+# Cloudinary
+cloudinary.cloud_name=YOUR_CLOUD_NAME
+cloudinary.api_key=YOUR_API_KEY
+cloudinary.api_secret=YOUR_API_SECRET
 
----
-
-### 4. Email Configuration (Gmail SMTP)
-
-```properties
+# Email (Gmail SMTP example)
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
 spring.mail.username=your-email@gmail.com
@@ -117,85 +126,51 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 ```
 
-> Use **Gmail App Password**, not your actual Gmail password.
+Tips:
+- For local development, create a copy `application-local.properties` and set the profile to `local` if you use active profiles. Alternatively set `SPRING_PROFILES_ACTIVE=local`.
+- or add this key and value to `application.properties`:
+- Keep secrets (passwords, API keys) out of source control. Use OS environment variables or a secrets manager where possible.
 
 ---
 
-### 5. Cloudinary Configuration (Image Upload)
+## Default seeded credentials
 
-```properties
-cloudinary.cloud_name=YOUR_CLOUD_NAME
-cloudinary.api_key=YOUR_API_KEY
-cloudinary.api_secret=YOUR_API_SECRET
-```
+The application seeds a default super-admin account when role records are created (see `PreRunner` class). These are for development/testing only.
 
----
+- Username: `superAdmin`
+- Email: `superAdmin@gmail.com`
+- Password: `Super@dmin.018`
+- Role: `ADMIN`
 
-### 6. Caching Configuration (Caffeine)
-
-Already enabled by default:
-
-```properties
-spring.cache.type=caffeine
-spring.cache.caffeine.spec=maximumSize=1000,expireAfterWrite=10m
-```
-
-No external service is required.
+If you plan to run this in any staging/production-like environment, immediately change this password or remove the seeding logic.
 
 ---
 
-### 7. Build and Run
+## Database Setup
 
-```bash
-mvn clean install
-mvn spring-boot:run
+1. Create a local database:
+
+```sql
+CREATE DATABASE recruitment_db;
 ```
 
-The application will start on:
+2. Verify JDBC URL and credentials in `application-local.properties`.
 
-```
-http://localhost:8080
-```
+3. The application uses `spring.jpa.hibernate.ddl-auto=update` by default, which will automatically create/update schema objects based on entities. For stricter control, consider using migrations (Flyway or Liquibase) and change the JPA DDL property.
 
 ---
 
 ## API Documentation (Swagger)
 
-Once the application is running, access Swagger UI:
+Swagger UI is available once the application is running. Common paths:
 
 ```
 http://localhost:8080/swagger-ui.html
-```
-
-or
-
-```
 http://localhost:8080/swagger-ui/index.html
 ```
 
----
-
-## Configuration Highlights
-
-* **DDL Auto Update**
-
-  ```properties
-  spring.jpa.hibernate.ddl-auto=update
-  ```
-
-* **Connection Pooling (HikariCP)**
-
-  ```properties
-  spring.datasource.hikari.maximum-pool-size=20
-  ```
-
-* **Server Compression Enabled**
-  Improves API response performance.
-
-* **Spring Logs Disabled by Default**
-
-  ```properties
-  logging.level.org.springframework=OFF
-  ```
+Inspect the controllers under `src/main/java/.../controllers` to see exposed endpoints and security constraints.
 
 ---
+
+*Last updated: 2026-01-12*
