@@ -18,8 +18,6 @@ public class InterviewUpdateDto {
     @Size(max = 512)
     private String interviewLink;
 
-    private List<Integer> interviewerIds;
-
     private LocalDate interviewDate;
 
     private InterviewStatus interviewStatus;

@@ -1,23 +1,21 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateSkillDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.skill.CandidateSkillCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.skill.CandidateSkillUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.candidate.CandidateSkillResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.*;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.CandidateRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.CandidateSkillRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.SkillRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.CandidateSkillServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ModelServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.Mapper;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.PaginatedResponseCreator;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,24 +25,19 @@ public class CandidateSkillService implements CandidateSkillServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(CandidateSkillService.class);
 
-    private final CandidateRepository candidateRepository;
-    private final CandidateSkillRepository candidateSkillRepository;
-    private final SkillRepository skillRepository;
-    private final ModelMapper modelMapper;
+    private final Mapper mapper;
+    private final ModelServiceInterface modelService;
+    private final PaginatedResponseCreator paginatedResponseCreator;
 
     @Override
     @Caching(evict = {
             @CacheEvict(value = "candidateSkillData",allEntries = true)
     })
-    public CandidateSkillDto addCandidateSKill(CandidateSkillDto candidateSkill) {
+    public CandidateSkillResponseDto addCandidateSKill(CandidateSkillCreateDto candidateSkill) {
         logger.info("Adding candidate skill for candidateId: {}, skillId: {}",
                 candidateSkill.getCandidate(),candidateSkill.getSkill());
-        CandidateModel candidate = candidateRepository.findById(candidateSkill.getCandidate()).orElseThrow(
-                ()->new ResourceNotFoundException("Candidate","CandidateId",candidateSkill.getCandidate().toString())
-        );
-        SkillModel skill = skillRepository.findById(candidateSkill.getSkill()).orElseThrow(
-                ()->new ResourceNotFoundException("Skill","SkillId",candidateSkill.getSkill().toString())
-        );
+        CandidateModel candidate = modelService.getCandidate(candidateSkill.getCandidate());
+        SkillModel skill = modelService.getSkill(candidateSkill.getSkill());
 
         CandidateSkillModel newCandidateSkill = new CandidateSkillModel();
         newCandidateSkill.setCandidate(candidate);
@@ -52,29 +45,27 @@ public class CandidateSkillService implements CandidateSkillServiceInterface {
         newCandidateSkill.setYearsOfExperience(candidateSkill.getYearsOfExperience());
         newCandidateSkill.setProficiencyLevel(candidateSkill.getProficiencyLevel());
 
-        CandidateSkillModel savedCandidateSkill = candidateSkillRepository.save(newCandidateSkill);
+        CandidateSkillModel savedCandidateSkill = modelService.addCandidateSkill(newCandidateSkill);
         logger.info("Successfully added candidate Skill with ID: {}", savedCandidateSkill.getCandidateSkillId());
-        return convertor(savedCandidateSkill);
+        return mapper.toDto(savedCandidateSkill, CandidateSkillResponseDto.class);
     }
 
     @Override
-    public CandidateSkillDto getCandidateSkillById(Integer candidateSkillId) {
+    public CandidateSkillResponseDto getCandidateSkillById(Integer candidateSkillId) {
         logger.info("Fetching candidate Skill With Id {} - ",candidateSkillId);
-        CandidateSkillModel candidateSkill = candidateSkillRepository.findById(candidateSkillId).orElseThrow(
-                ()->new ResourceNotFoundException("CandidateSkill","candidateSkillId",candidateSkillId.toString())
-        );
+        CandidateSkillModel candidateSkill = modelService.getCandidateSkill(candidateSkillId);
         logger.info("Fetched {} candidate skill With Id ",candidateSkillId);
-        return convertor(candidateSkill);
+        return mapper.toDto(candidateSkill, CandidateSkillResponseDto.class);
     }
-
 
     @Override
     @Cacheable(value = "candidateSkillData",key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<CandidateSkillDto> getAllData(Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<CandidateSkillResponseDto> getAllData(Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all candidate Skill - Page: {}, Size: {}, SortBy: {}, SortDir: {}", page, size, sortBy, sortDir);
-        Page<CandidateSkillModel> pageData = candidateSkillRepository.findAll(PageRequest.of(page, size, getSort(sortBy, sortDir)));
-        PaginatedResponse<CandidateSkillDto> response = paginatedResponse(pageData);
-        logger.info("Fetched {} candidate education records (Page {}/{})", response.getData().size(), page + 1, response.getTotalPages());
+        Pageable pageable = paginatedResponseCreator.getPageable(page, size, sortBy, sortDir);
+        PaginatedResponse<CandidateSkillResponseDto> response =
+                    paginatedResponseCreator.getPaginatedResponse(modelService.getAllCandidateSkills(pageable),  CandidateSkillResponseDto.class);
+        logger.info("Fetched {} candidate skill records (Page {}/{})", response.getData().size(), page + 1, response.getTotalPages());
         return response;
     }
 
@@ -84,29 +75,35 @@ public class CandidateSkillService implements CandidateSkillServiceInterface {
     })
     public void deleteCandidateSkill(Integer candidateSKillId) {
         logger.info("Deleting candidate Skill with ID: {}", candidateSKillId);
-        CandidateSkillModel existingCandidateSkill = candidateSkillRepository.findById(candidateSKillId)
-                .orElseThrow(() -> {
-                    logger.error("CandidateSkill not found with ID: {}", candidateSKillId);
-                    return new ResourceNotFoundException("CandidateSkill", "candidateSkillId", candidateSKillId.toString());
-                });
-        candidateSkillRepository.delete(existingCandidateSkill);
+        CandidateSkillModel existingCandidateSkill = modelService.getCandidateSkill(candidateSKillId);
+        modelService.removeCandidateSkill(existingCandidateSkill);
         logger.info("Deleted candidate Skill successfully with ID: {}", candidateSKillId);
     }
 
     @Override
     @Cacheable(value = "candidateSkillData",key = "'candidateId_' + #candidateId + 'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<CandidateSkillDto> getCandidateSKillByCandidateId(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<CandidateSkillResponseDto> getCandidateSKillByCandidateId(Integer candidateId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching candidate skill for candidateId: {}, Page: {}, Size: {}", candidateId, page, size);
-        Page<CandidateSkillModel> pageData = candidateSkillRepository.findByCandidate_CandidateId(candidateId, PageRequest.of(page, size, getSort(sortBy, sortDir)));
-        return paginatedResponse(pageData);
+        Pageable pageable = paginatedResponseCreator.getPageable(page, size, sortBy, sortDir);
+        PaginatedResponse<CandidateSkillResponseDto> response =
+                paginatedResponseCreator.getPaginatedResponse(
+                modelService.getCandidateSkillByCandidate(candidateId,pageable),
+                        CandidateSkillResponseDto.class);
+        logger.info("Fetched {} candidate skill By Candidate id : {} records (Page {}/{})", response.getData().size(),candidateId, page + 1, response.getTotalPages());
+        return response;
     }
 
     @Override
     @Cacheable(value = "candidateSkillData",key = "'skillId_' + #candidateId + 'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
-    public PaginatedResponse<CandidateSkillDto> getAllCandidatesBySkillId(Integer skillId, Integer page, Integer size, String sortBy, String sortDir) {
+    public PaginatedResponse<CandidateSkillResponseDto> getAllCandidatesBySkillId(Integer skillId, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching candidates from skillId: {}, Page: {}, Size: {}", skillId, page, size);
-        Page<CandidateSkillModel> pageData = candidateSkillRepository.findBySkill_SkillId(skillId, PageRequest.of(page, size, getSort(sortBy, sortDir)));
-        return paginatedResponse(pageData);
+        Pageable pageable = paginatedResponseCreator.getPageable(page, size, sortBy, sortDir);
+        PaginatedResponse<CandidateSkillResponseDto> response =
+                paginatedResponseCreator.getPaginatedResponse(
+                modelService.getCandidateSkillBySkill(skillId,pageable),  CandidateSkillResponseDto.class
+                );
+        logger.info("Fetched {} candidate skill By Skill id : {} records (Page {}/{})", response.getData().size(),skillId, page + 1, response.getTotalPages());
+        return response;
     }
 
     @Override
@@ -114,23 +111,13 @@ public class CandidateSkillService implements CandidateSkillServiceInterface {
     @Caching(evict = {
             @CacheEvict(value = "candidateSkillData",allEntries = true),
     })
-    public CandidateSkillDto updateCandidateSkill(Integer candidateSkillId, CandidateSkillDto candidateSkill) {
+    public CandidateSkillResponseDto updateCandidateSkill(Integer candidateSkillId, CandidateSkillUpdateDto candidateSkill) {
         logger.info("Updating candidate skill with ID: {}", candidateSkillId);
 
-        CandidateSkillModel existingCandidateSkill = candidateSkillRepository.findById(candidateSkillId)
-                .orElseThrow(() -> {
-                    logger.error("CandidateSkill not found with ID: {}", candidateSkillId);
-                    return new ResourceNotFoundException("CandidateSkill", "candidateSkillId", candidateSkillId.toString());
-                });
+        CandidateSkillModel existingCandidateSkill = modelService.getCandidateSkill(candidateSkillId);
 
-        if (existingCandidateSkill.getCandidate() != null) {
-            CandidateModel newCandidate = candidateRepository.findById(candidateSkill.getCandidate())
-                    .orElseThrow(() -> new ResourceNotFoundException("Candidate", "candidateId", candidateSkill.getCandidate().toString()));
-            existingCandidateSkill.setCandidate(newCandidate);
-        }
         if (candidateSkill.getSkill() != null) {
-            SkillModel newSkill = skillRepository.findById(candidateSkill.getSkill())
-                    .orElseThrow(() -> new ResourceNotFoundException("Skill", "skillId", candidateSkill.getSkill().toString()));
+            SkillModel newSkill = modelService.getSkill(candidateSkill.getSkill());
             existingCandidateSkill.setSkill(newSkill);
         }
 
@@ -141,35 +128,9 @@ public class CandidateSkillService implements CandidateSkillServiceInterface {
             existingCandidateSkill.setYearsOfExperience(candidateSkill.getYearsOfExperience());
         }
 
-        CandidateSkillModel updatedCandidateSkill = candidateSkillRepository.save(existingCandidateSkill);
+        CandidateSkillModel updatedCandidateSkill = modelService.addCandidateSkill(existingCandidateSkill);
         logger.info("Updated candidate skill successfully with ID: {}", candidateSkillId);
-        return convertor(updatedCandidateSkill);
+        return mapper.toDto(updatedCandidateSkill, CandidateSkillResponseDto.class);
     }
 
-    private Sort getSort(String sortBy, String sortDir) {
-        return sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-    }
-
-    private CandidateSkillDto convertor(CandidateSkillModel entity) {
-        CandidateSkillDto dto = new CandidateSkillDto();
-        dto.setCandidateSkillId(entity.getCandidateSkillId());
-        dto.setCandidateName(entity.getCandidate().getCandidateFirstName());
-        dto.setCandidate(entity.getCandidate().getCandidateId());
-        dto.setSkill(entity.getSkill().getSkillId());
-        dto.setSkillName(entity.getSkill().getSkill());
-        dto.setYearsOfExperience(entity.getYearsOfExperience());
-        dto.setProficiencyLevel(entity.getProficiencyLevel());
-        return dto;
-    }
-
-    private PaginatedResponse<CandidateSkillDto> paginatedResponse(Page<CandidateSkillModel> pageData) {
-        PaginatedResponse<CandidateSkillDto> response = new PaginatedResponse<>();
-        response.setData(pageData.getContent().stream().map(this::convertor).toList());
-        response.setCurrentPage(pageData.getNumber());
-        response.setPageSize(pageData.getSize());
-        response.setTotalItems(pageData.getTotalElements());
-        response.setTotalPages(pageData.getTotalPages());
-        response.setLast(pageData.isLast());
-        return response;
-    }
 }

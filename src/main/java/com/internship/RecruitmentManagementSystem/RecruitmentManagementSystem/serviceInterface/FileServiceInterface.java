@@ -9,7 +9,6 @@ import java.io.InputStream;
 
 public interface FileServiceInterface {
 
-    String uploadImage(String path, MultipartFile file) throws IOException, InvalidImageFormateException;
+    String uploadImage(MultipartFile file) throws InvalidImageFormateException;
 
-    InputStream getResource(String path,String fileName)throws FileNotFoundException;
 }

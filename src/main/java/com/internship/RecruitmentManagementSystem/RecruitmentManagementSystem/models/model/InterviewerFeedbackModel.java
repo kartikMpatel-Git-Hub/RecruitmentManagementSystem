@@ -24,6 +24,6 @@ public class InterviewerFeedbackModel extends BaseEntity {
     @Column(length = 500)
     private String interviewFeedback;
 
-    @OneToMany(mappedBy = "feedback", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "feedback", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<SkillRatingModel> skillRatings;
 }

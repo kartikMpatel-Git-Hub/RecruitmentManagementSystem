@@ -1,6 +1,9 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateSkillDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.skill.CandidateSkillCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.skill.CandidateSkillUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.candidate.CandidateSkillResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.CandidateSkillService;
 import jakarta.validation.Valid;
@@ -21,7 +24,7 @@ public class CandidateSkillController {
     private final CandidateSkillService candidateSkillService;
 
     @PostMapping("/")
-    public ResponseEntity<?> addCandidateSkill(@RequestBody CandidateSkillDto candidateSkillDto) {
+    public ResponseEntity<?> addCandidateSkill(@RequestBody CandidateSkillCreateDto candidateSkillDto) {
         logger.info("Received request to add candidate skill: {}", candidateSkillDto);
         var result = candidateSkillService.addCandidateSKill(candidateSkillDto);
         logger.info("Candidate skill added successfully with ID: {}", result.getCandidateSkillId());
@@ -31,7 +34,7 @@ public class CandidateSkillController {
     @PutMapping("/{candidateSkillId}")
     public ResponseEntity<?> updateCandidateSkill(
             @PathVariable Integer candidateSkillId,
-            @RequestBody @Valid CandidateSkillDto candidateSkillDto
+            @RequestBody @Valid CandidateSkillUpdateDto candidateSkillDto
     ) {
         logger.info("Received request to update candidate skill with ID: {}", candidateSkillId);
         var result = candidateSkillService.updateCandidateSkill(candidateSkillId, candidateSkillDto);
@@ -40,7 +43,7 @@ public class CandidateSkillController {
     }
 
     @GetMapping
-    public ResponseEntity<PaginatedResponse<CandidateSkillDto>> getAllCandidateSkills(
+    public ResponseEntity<PaginatedResponse<CandidateSkillResponseDto>> getAllCandidateSkills(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "candidateSkillId") String sortBy,
@@ -69,7 +72,7 @@ public class CandidateSkillController {
     }
 
     @GetMapping("/candidate/{candidateId}")
-    public ResponseEntity<PaginatedResponse<CandidateSkillDto>> getCandidateSkillByCandidateId(
+    public ResponseEntity<PaginatedResponse<CandidateSkillResponseDto>> getCandidateSkillByCandidateId(
             @PathVariable Integer candidateId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
@@ -83,7 +86,7 @@ public class CandidateSkillController {
     }
 
     @GetMapping("/skill/{skillId}")
-    public ResponseEntity<PaginatedResponse<CandidateSkillDto>> getCandidatesBySkillId(
+    public ResponseEntity<PaginatedResponse<CandidateSkillResponseDto>> getCandidatesBySkillId(
             @PathVariable Integer skillId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

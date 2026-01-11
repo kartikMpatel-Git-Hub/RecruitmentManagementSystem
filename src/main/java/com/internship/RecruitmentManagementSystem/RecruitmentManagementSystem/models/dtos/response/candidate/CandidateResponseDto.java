@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 
 @Data
 @RequiredArgsConstructor
@@ -28,7 +30,7 @@ public class CandidateResponseDto {
     private String candidateResumeUrl;
     private Integer candidateTotalExperienceInYears;
 
-    private CandidateSkillResponseDto candidateSkill;
+    private Set<CandidateSkillResponseDto> candidateSkills;
 
-    private CandidateEducationResponseDto candidateEducation;
+    private Set<CandidateEducationResponseDto> candidateEducations;
 }

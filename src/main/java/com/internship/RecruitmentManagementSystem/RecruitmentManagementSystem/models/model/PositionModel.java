@@ -56,24 +56,24 @@ public class PositionModel extends BaseEntity {
     @Column(nullable = false,length = 50)
     private String positionLanguage;
 
-    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     @JoinColumn(name = "position_status_id", referencedColumnName = "position_status_id")
     private PositionStatusModel positionStatus;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "createdBy", referencedColumnName = "userId")
     private UserModel createdBy;
 
-    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.EAGER)
     private List<PositionRequirementModel> positionRequirements;
 
-    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.EAGER)
     private List<PositionRoundModel> positionRounds;
 
-    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "position",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.EAGER)
     private List<ApplicationModel> positionApplications;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "tbl_position_required_education",
             joinColumns = @JoinColumn(name = "position_id"),

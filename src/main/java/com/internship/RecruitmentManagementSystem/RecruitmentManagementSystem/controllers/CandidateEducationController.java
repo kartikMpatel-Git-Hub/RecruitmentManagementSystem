@@ -1,6 +1,7 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateEducationDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.education.CandidateEducationCreateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.education.CandidateEducationUpdateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.CandidateEducationService;
@@ -23,7 +24,7 @@ public class CandidateEducationController {
 
     @PostMapping("/")
     public ResponseEntity<?> addCandidateEducation(
-            @RequestBody @Valid CandidateEducationDto candidateEducationDto
+            @RequestBody @Valid CandidateEducationCreateDto candidateEducationDto
     ) {
         logger.info("Received request to add candidate education: {}", candidateEducationDto);
         var result = candidateEducationService.addCandidateEducation(candidateEducationDto);
@@ -34,7 +35,7 @@ public class CandidateEducationController {
     @PutMapping("/{candidateEducationId}")
     public ResponseEntity<?> updateCandidateEducation(
             @PathVariable Integer candidateEducationId,
-            @RequestBody @Valid CandidateEducationDto candidateEducationDto
+            @RequestBody @Valid CandidateEducationUpdateDto candidateEducationDto
     ) {
         logger.info("Received request to update candidate education with ID: {}", candidateEducationId);
         var result = candidateEducationService.updateCandidateEducation(candidateEducationId, candidateEducationDto);
@@ -43,7 +44,7 @@ public class CandidateEducationController {
     }
 
     @GetMapping
-    public ResponseEntity<PaginatedResponse<CandidateEducationDto>> getAllCandidateEducations(
+    public ResponseEntity<PaginatedResponse<?>> getAllCandidateEducations(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "candidateEducationId") String sortBy,
@@ -77,7 +78,7 @@ public class CandidateEducationController {
     }
 
     @GetMapping("/candidate/{candidateId}")
-    public ResponseEntity<PaginatedResponse<CandidateEducationDto>> getCandidateEducationByCandidateId(
+    public ResponseEntity<PaginatedResponse<?>> getCandidateEducationByCandidateId(
             @PathVariable Integer candidateId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -91,7 +92,7 @@ public class CandidateEducationController {
     }
 
     @GetMapping("/degree/{degreeId}")
-    public ResponseEntity<PaginatedResponse<CandidateEducationDto>> getCandidateEducationByDegreeId(
+    public ResponseEntity<PaginatedResponse<?>> getCandidateEducationByDegreeId(
             @PathVariable Integer degreeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -105,7 +106,7 @@ public class CandidateEducationController {
     }
 
     @GetMapping("/university/{universityId}")
-    public ResponseEntity<PaginatedResponse<CandidateEducationDto>> getCandidateEducationByUniversityId(
+    public ResponseEntity<PaginatedResponse<?>> getCandidateEducationByUniversityId(
             @PathVariable Integer universityId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

@@ -1,28 +1,33 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.CandidateUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.candidate.CandidateResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.CandidateRegistrationResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface CandidateServiceInterface {
 
-    public CandidateRegistrationResponse register(UserModel userModel);
+    CandidateRegistrationResponse register(UserModel userModel);
 
-    public CandidateDto updateCandidate(CandidateDto newCandidate, Integer candidateId);
+    CandidateResponseDto updateCandidate(MultipartFile resume, CandidateUpdateDto newCandidate, Integer candidateId);
 
-    public Boolean deleteCandidate(Integer candidateId);
+    Boolean deleteCandidate(Integer candidateId);
 
-    public PaginatedResponse<CandidateDto> getAllCandidates(int page, int size, String sortBy, String sortDir);
+    PaginatedResponse<CandidateResponseDto> getAllCandidates(int page, int size, String sortBy, String sortDir);
 //    List<CandidateDto> getAllCandidates();
 
-    CandidateDto getCandidate(Integer candidateId);
+    CandidateResponseDto getCandidate(Integer candidateId);
 
-    CandidateDto getCandidateByUserId(Integer userId);
+    CandidateResponseDto getCandidateByUserId(Integer userId);
 
-    CandidateDto updateCandidateSkills(Integer candidateId, List<Integer> skillIds);
+    CandidateResponseDto updateCandidateSkills(Integer candidateId, List<Integer> skillIds);
 
     Long countCandidates();
+
+    CandidateResponseDto processResume(MultipartFile resume);
 }

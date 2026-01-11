@@ -1,5 +1,8 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.application;
 
+import lombok.Data;
+
+@Data
 public class MappedApplicationResponseDto {
     private Integer applicationId;
 
@@ -11,5 +14,5 @@ public class MappedApplicationResponseDto {
 
     private Boolean isShortlisted;
 
-    private Double matchingScore;
+    private Double matchScore;
 }

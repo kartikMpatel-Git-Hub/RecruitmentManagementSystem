@@ -20,10 +20,10 @@ public class CustomBean {
     private String apiSecret;
 
 
-    @Bean
-    public ModelMapper modelMapper(){
-        return new ModelMapper();
-    }
+//    @Bean
+//    public ModelMapper modelMapper(){
+//        return new ModelMapper();
+//    }
 
     @Bean
     public Cloudinary cloudinary() {

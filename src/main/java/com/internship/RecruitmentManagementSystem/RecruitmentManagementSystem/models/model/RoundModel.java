@@ -24,13 +24,13 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class    RoundModel extends BaseEntity {
+public class RoundModel extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer roundId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "application_id", nullable = false)
     private ApplicationModel application;
 
@@ -52,7 +52,7 @@ public class    RoundModel extends BaseEntity {
 
     private Double roundRating;
 
-    @OneToMany(mappedBy = "round", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "round", fetch = FetchType.EAGER)
     private List<InterviewModel> interviews;
 
 

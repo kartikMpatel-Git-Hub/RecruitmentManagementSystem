@@ -2,7 +2,9 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.m
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.degree.DegreeResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.university.UniversityResponseDto;
+import lombok.Data;
 
+@Data
 public class CandidateEducationResponseDto {
     Integer candidateEducationId;
 

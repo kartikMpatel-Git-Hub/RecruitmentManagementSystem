@@ -4,5 +4,6 @@ public enum RoundResult {
     PASS,
     FAIL,
     UNDERVALUATION,
-    PENDING
+    PENDING,
+    CANCELLED
 }

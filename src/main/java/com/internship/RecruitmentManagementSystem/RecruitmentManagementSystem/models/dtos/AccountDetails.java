@@ -7,6 +7,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class AccountDetails {
     private boolean userAccountNonExpired = true;
     private boolean userAccountNonLocked = true;

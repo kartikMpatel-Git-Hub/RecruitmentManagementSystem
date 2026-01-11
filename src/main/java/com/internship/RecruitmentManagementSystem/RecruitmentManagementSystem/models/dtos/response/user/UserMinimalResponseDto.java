@@ -10,7 +10,7 @@ public class UserMinimalResponseDto {
 
     private Integer userId;
 
-    private String userName;
+    private String username;
 
     private String userEmail;
 

@@ -11,7 +11,9 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "tbl_candidate",indexes = {
@@ -84,11 +86,11 @@ public class CandidateModel extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserModel user;
 
-    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CandidateSkillModel> candidateSkills = new ArrayList<>();
+    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    private Set<CandidateSkillModel> candidateSkills = new HashSet<>();
 
-    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CandidateEducationModel> candidateEducations = new ArrayList<>();
+    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    private Set<CandidateEducationModel> candidateEducations = new HashSet<>();
 
 
 }

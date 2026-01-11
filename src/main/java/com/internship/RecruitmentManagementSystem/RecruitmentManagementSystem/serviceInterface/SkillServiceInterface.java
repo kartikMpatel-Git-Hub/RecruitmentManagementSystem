@@ -10,7 +10,6 @@ public interface SkillServiceInterface {
 
     SkillResponseDto addSkill(SkillCreateDto skillDto);
     SkillResponseDto getSkill(Integer skillId);
-    SkillModel getSkillById(Integer skillId);
     PaginatedResponse<SkillResponseDto> getSkills(Integer page,Integer size,String sortBy,String sortDir);
     SkillResponseDto updateSkill(SkillUpdateDto newSkill, Integer skillId);
     void deleteSkill(Integer skillId);
