@@ -3,6 +3,7 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.r
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.CandidateModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -16,9 +17,24 @@ public interface CandidateRepository extends JpaRepository<CandidateModel,Intege
 
     long count();
 
+    @EntityGraph(attributePaths =
+            {
+                    "user",
+                    "candidateSkills",
+                    "candidateEducations"}
+    )
+    Optional<CandidateModel> findById(Integer candidateId);
+
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
-    @Query("SELECT c FROM CandidateModel c ORDER BY c.createdAt DESC")
+    @Query("""
+        SELECT DISTINCT c 
+        FROM CandidateModel c
+        LEFT JOIN FETCH c.candidateSkills cs
+        LEFT JOIN FETCH cs.skill
+        LEFT JOIN FETCH c.candidateEducations
+        ORDER BY c.createdAt DESC
+    """)
     Page<CandidateModel> findRecentCandidates(Pageable pageable);
 
     @Query("SELECT " +
@@ -29,9 +45,26 @@ public interface CandidateRepository extends JpaRepository<CandidateModel,Intege
             "FROM CandidateModel c")
     List<Object[]> getExperienceDistributionBuckets();
 
+    @Query("""
+        SELECT DISTINCT c
+        FROM CandidateModel c
+        LEFT JOIN FETCH c.candidateSkills cs
+        LEFT JOIN FETCH cs.skill
+        ORDER BY c.candidateTotalExperienceInYears DESC
+    """)
     List<CandidateModel> findTop10ByOrderByCandidateTotalExperienceInYearsDesc();
 
-    Optional<CandidateModel> findByUserUserId(Integer userId);
+    @EntityGraph(attributePaths =
+            {
+                    "user",
+                    "candidateSkills",
+                    "candidateEducations"
+            }
+    )
+    @Query("""
+    select c from CandidateModel c where c.user.userId = :userId
+    """)
+    Optional<CandidateModel> findByUserId(Integer userId);
     Optional<CandidateModel> findByUserUserEmail(String email);
 
     boolean existsByUserUserEmail(String email);

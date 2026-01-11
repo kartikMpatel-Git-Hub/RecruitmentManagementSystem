@@ -4,16 +4,12 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.CandidateModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.RoleModel;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.CandidateRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.RoleRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.UserRepository;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ModelServiceInterface;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.ExcelUtils;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.HtmlTemplateBuilder;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +22,9 @@ public class BulkCandidateService {
     private static final Logger logger = LoggerFactory.getLogger(BulkCandidateService.class);
 
     private final ExcelValidationService validationService;
-    private final UserRepository userRepository;
-    private final CandidateRepository candidateRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final HtmlTemplateBuilder htmlTemplateBuilder;
     private final EmailService emailService;
+    private final ModelServiceInterface modelService;
 
     private static final SecureRandom random = new SecureRandom();
 
@@ -56,8 +49,7 @@ public class BulkCandidateService {
         }
 
         logger.debug("Fetching role: {}", data.getRoleName());
-        RoleModel role = roleRepository.findByRole(data.getRoleName())
-                .orElseThrow(() -> new RuntimeException("Invalid role: " + data.getRoleName()));
+        RoleModel role = modelService.getRole(data.getRoleName());
 
         logger.debug("Mapping row {} to UserModel", rowNum);
         UserModel user = mapToUser(data, role);
@@ -65,41 +57,18 @@ public class BulkCandidateService {
         data.setUserPassword(user.getUserPassword());
         logger.debug("Encoding password for user: {}", data.getUserName());
         user.setUserPassword(passwordEncoder.encode(user.getUserPassword()));
-        userRepository.save(user);
+        modelService.addUser(user);
 
         logger.info("User created successfully for row {} with username: {}", rowNum, user.getUsername());
 
         logger.debug("Mapping row {} to CandidateModel", rowNum);
         CandidateModel candidate = mapToCandidate(data, user);
-        candidateRepository.save(candidate);
+        modelService.addCandidate(candidate);
 
         logger.info("Candidate saved successfully for row {} ({})", rowNum, data.getFirstName());
 
         logger.info("Sending credential mail to candidate: {}", data.getUserEmail());
-        mailToCandidate(data);
-    }
-
-    private void mailToCandidate(CandidateRowData data) {
-        try {
-            String mailBody = htmlTemplateBuilder.buildCandidateCredentialTemplate(
-                    data.getFirstName() + " " + data.getLastName(),
-                    data.getUserName(),
-                    data.getUserPassword()
-            );
-
-            emailService.sendMail(
-                    "kartikpatel7892@gmail.com",
-                    data.getUserEmail(),
-                    "Account Credentials - Recruitment Management System",
-                    mailBody
-            );
-
-            logger.info("Email sent successfully to {}", data.getUserEmail());
-
-        } catch (Exception e) {
-            logger.error("Failed to send email to {}: {}", data.getUserEmail(), e.getMessage());
-            throw new RuntimeException("Failed to send email: " + e.getMessage());
-        }
+        emailService.mailToCandidate(data);
     }
 
     private CandidateRowData extractRow(Row row, int rowNum) {

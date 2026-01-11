@@ -2,7 +2,9 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.m
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.skill.SkillResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.ProficiencyLevel;
+import lombok.Data;
 
+@Data
 public class CandidateSkillResponseDto {
     private Integer candidateSkillId;
 

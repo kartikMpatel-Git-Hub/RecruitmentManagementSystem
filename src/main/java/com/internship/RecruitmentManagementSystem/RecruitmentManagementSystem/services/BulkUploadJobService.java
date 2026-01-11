@@ -1,7 +1,6 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services;
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.FailedProcessException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.ResourceNotFoundException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.job.BulkJobResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.job.BulkUploadRowResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.job.JobStatusResponseDto;
@@ -9,21 +8,17 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.BulkUploadJob;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.BulkUploadRowResult;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadJobRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadRowResultRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.UserRepository;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.AsyncServiceInterface;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.BulkUploadJobServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ModelServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.Mapper;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.PaginatedResponseCreator;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,11 +30,10 @@ import java.util.List;
 public class BulkUploadJobService implements BulkUploadJobServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(BulkUploadJobService.class);
-
-    private final BulkUploadJobRepository bulkUploadJobRepository;
-    private final BulkUploadRowResultRepository bulkUploadRowResultRepository;
     private final AsyncServiceInterface asyncService;
-    private final UserRepository userRepository;
+    private final PaginatedResponseCreator paginatedResponseCreator;
+    private final Mapper mapper;
+    private final ModelServiceInterface modelService;
 
     @Override
     public Integer processBulkUploadJob(MultipartFile file, Integer uploadedById) {
@@ -48,9 +42,7 @@ public class BulkUploadJobService implements BulkUploadJobServiceInterface {
 
         try {
             logger.debug("Fetching user who uploaded the file. User ID: {}", uploadedById);
-            UserModel uploadedBy = userRepository.findById(uploadedById).orElseThrow(
-                    () -> new ResourceNotFoundException("User", "id", uploadedById.toString())
-            );
+            UserModel uploadedBy = modelService.getUser(uploadedById);
 
             logger.debug("Creating BulkUploadJob entity for file: {}", file.getOriginalFilename());
 
@@ -60,7 +52,7 @@ public class BulkUploadJobService implements BulkUploadJobServiceInterface {
             job.setStartedAt(LocalDateTime.now());
             job.setUploadedBy(uploadedBy);
 
-            bulkUploadJobRepository.save(job);
+            modelService.addBulkUploadJob(job);
             logger.info("Bulk upload job created with Job ID: {}", job.getJobId());
 
             logger.info("Initiating asynchronous processing for Job ID: {}", job.getJobId());
@@ -79,12 +71,12 @@ public class BulkUploadJobService implements BulkUploadJobServiceInterface {
 
         logger.info("Fetching status for BulkUpload Job ID: {}", jobId);
 
-        BulkUploadJob job = bulkUploadJobRepository.findById(jobId).orElseThrow(
-                () -> new ResourceNotFoundException("BulkUploadJob", "id", jobId.toString())
-        );
+        BulkUploadJob job = modelService.getBulkUploadJob(jobId);
 
         logger.debug("Job status retrieved: {}", job.getStatus());
-        List<BulkUploadRowResult> rowResult = bulkUploadRowResultRepository.findByJob(job).stream().toList();
+        List<BulkUploadRowResult> rowResult =
+                modelService.getAllBulkRowResultByJob(job)
+                        .stream().toList();
 
         JobStatusResponseDto res = new JobStatusResponseDto();
         res.setJobId(job.getJobId());
@@ -105,30 +97,16 @@ public class BulkUploadJobService implements BulkUploadJobServiceInterface {
     }
 
     @Override
-    public List<BulkJobResponseDto> getAllBulkEntries() {
+    public PaginatedResponse<BulkJobResponseDto> getAllBulkEntries(int page, int size, String sortBy, String sortDir) {
 
         logger.info("Fetching all bulk upload entries");
-
-        List<BulkUploadJob> jobs = bulkUploadJobRepository.findAll();
-        logger.debug("Total bulk jobs found: {}", jobs.size());
-
-        return jobs.isEmpty()
-                ? List.of()
-                : jobs.stream().map(this::convertor).toList();
+        Pageable pageable = paginatedResponseCreator.getPageable(page, size, sortBy, sortDir);
+        PaginatedResponse<BulkJobResponseDto> paginatedJobs =
+                paginatedResponseCreator.getPaginatedResponse(
+                        modelService.getAllBulkUploadJobs(pageable),
+                        BulkJobResponseDto.class
+                );
+        logger.info("Successfully fetched bulk upload entries");
+        return paginatedJobs;
     }
-
-    private BulkJobResponseDto convertor(BulkUploadJob entity) {
-        BulkJobResponseDto dto = new BulkJobResponseDto();
-        dto.setJobId(entity.getJobId());
-        dto.setFileName(entity.getFileName());
-        dto.setStatus(entity.getStatus());
-        dto.setTotalRows(entity.getTotalRows());
-        dto.setSuccessRows(entity.getSuccessRows());
-        dto.setFailedRows(entity.getFailedRows());
-        dto.setStartedAt(entity.getStartedAt());
-        dto.setCompletedAt(entity.getCompletedAt());
-        dto.setUploadedById(entity.getUploadedBy().getUserId());
-        return dto;
-    }
-
 }

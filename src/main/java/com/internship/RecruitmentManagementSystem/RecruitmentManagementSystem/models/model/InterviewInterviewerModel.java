@@ -15,11 +15,11 @@ public class InterviewInterviewerModel extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer interviewInterviewerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "interview_id")
     private InterviewModel interview;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "interviewer_id")
     private UserModel interviewer;
 

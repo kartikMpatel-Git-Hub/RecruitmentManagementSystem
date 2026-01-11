@@ -1,17 +1,14 @@
 package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.controllers;
 
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.FailedProcessException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.CandidateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.candidate.CandidateUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.candidate.CandidateResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.CandidateService;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.FileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,28 +26,27 @@ public class CandidateController {
     private static final Logger logger = LoggerFactory.getLogger(CandidateController.class);
 
     private final CandidateService candidateService;
-    private final FileService fileService;
 
-    @Value("${project.image}")
-    private String path;
+    @PostMapping("/resume-entry")
+    public ResponseEntity<?> addCandidate(
+            @RequestParam("resume") MultipartFile resume
+    ) {
+        logger.info("Request for adding candidate based on resume received");
+        CandidateResponseDto candidate = candidateService.processResume(resume);
+
+        logger.info("Candidate added with candidateId : {}",candidate.getCandidateId());
+        return new ResponseEntity<>(candidate, HttpStatus.OK);
+    }
 
     @PutMapping(value = "/{candidateId}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<CandidateDto> updateCandidate(
+    public ResponseEntity<CandidateResponseDto> updateCandidate(
             @PathVariable Integer candidateId,
             @RequestPart(value = "resume", required = false) MultipartFile resume,
-            @RequestPart("candidate") @Valid CandidateDto existingCandidate
+            @RequestPart("candidate") @Valid CandidateUpdateDto existingCandidate
     ) {
         logger.info("Request received to update candidate with ID: {}", candidateId);
-
-        if (resume != null && !resume.isEmpty()) {
-            logger.debug("Resume file provided for candidate ID: {}", candidateId);
-            saveFiles(resume, existingCandidate);
-        } else {
-            logger.debug("No resume file provided for candidate ID: {}", candidateId);
-        }
-
         logger.debug("Calling CandidateService to update candidate with ID: {}", candidateId);
-        CandidateDto updatedCandidate = candidateService.updateCandidate(existingCandidate, candidateId);
+        CandidateResponseDto updatedCandidate = candidateService.updateCandidate(resume,existingCandidate, candidateId);
         logger.info("Successfully updated candidate with ID: {}", candidateId);
 
         return new ResponseEntity<>(updatedCandidate, HttpStatus.OK);
@@ -62,7 +58,7 @@ public class CandidateController {
         logger.info("Request received to update skills for candidate ID: {}", candidateId);
         logger.debug("Skill IDs to update: {}", skillIds);
 
-        CandidateDto candidateWithUpdatedSkills = candidateService.updateCandidateSkills(candidateId, skillIds);
+        CandidateResponseDto candidateWithUpdatedSkills = candidateService.updateCandidateSkills(candidateId, skillIds);
 
         logger.info("Successfully updated skills for candidate ID: {}", candidateId);
         return new ResponseEntity<>(candidateWithUpdatedSkills, HttpStatus.OK);
@@ -92,14 +88,14 @@ public class CandidateController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
-    public ResponseEntity<PaginatedResponse<CandidateDto>> getCandidates(
+    public ResponseEntity<PaginatedResponse<CandidateResponseDto>> getCandidates(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "candidateId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
         logger.info("Fetching paginated list of candidates - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
-        PaginatedResponse<CandidateDto> response = candidateService.getAllCandidates(page, size, sortBy, sortDir);
+        PaginatedResponse<CandidateResponseDto> response = candidateService.getAllCandidates(page, size, sortBy, sortDir);
         logger.debug("Fetched {} candidates from page {}", response.getData().size(), page);
         return ResponseEntity.ok(response);
     }
@@ -115,37 +111,8 @@ public class CandidateController {
     @GetMapping(value = "/user/{userId}")
     public ResponseEntity<?> getCandidateByUserId(@PathVariable Integer userId) {
         logger.info("Fetching candidate details for user ID: {}", userId);
-        CandidateDto candidate = candidateService.getCandidateByUserId(userId);
+        var candidate = candidateService.getCandidateByUserId(userId);
         logger.debug("Fetched candidate by user ID {}: {}", userId, candidate);
         return new ResponseEntity<>(candidate, HttpStatus.OK);
-    }
-
-    private void saveFiles(MultipartFile resume, CandidateDto candidateRegistrationDto) {
-        logger.debug("Attempting to save resume for candidate: {}", candidateRegistrationDto.getCandidateFirstName());
-        String resumeUrl = saveFile(resume);
-        if (resumeUrl == null) {
-            logger.error("Failed to upload resume for candidate: {}", candidateRegistrationDto.getCandidateFirstName());
-            throw new FailedProcessException("Failed to upload resume");
-        }
-        logger.debug("Resume uploaded successfully: {}", resumeUrl);
-        candidateRegistrationDto.setCandidateResumeUrl(resumeUrl);
-    }
-
-    private String saveFile(MultipartFile file) {
-        try {
-            logger.debug("Uploading file: {}", file.getOriginalFilename());
-
-//            String fileUrl = imageKitService.uploadFile(file);
-            String fileUrl = fileService.uploadImage(path,file);
-
-            logger.debug("File uploaded successfully: {}", fileUrl);
-            return fileUrl;
-        }  catch (Exception e) {
-            logger.error("Unexpected error while uploading file {}: {}", file.getOriginalFilename(), e.getMessage());
-            return null;
-        }
-        catch (InvalidImageFormateException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

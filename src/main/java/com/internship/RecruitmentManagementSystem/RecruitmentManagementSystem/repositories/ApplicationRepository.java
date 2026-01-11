@@ -4,6 +4,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.ApplicationModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<ApplicationModel,Integer> {
@@ -155,28 +157,66 @@ public interface ApplicationRepository extends JpaRepository<ApplicationModel,In
             "AND a.createdAt BETWEEN :start AND :end " +
             "GROUP BY function('month', a.createdAt) " +
             "ORDER BY function('month', a.createdAt)")
-    List<Object[]> countStatusApplicationsByMonth(LocalDateTime start, LocalDateTime end, ApplicationStatus status);
+    List<Object[]>  countStatusApplicationsByMonth(LocalDateTime start, LocalDateTime end, ApplicationStatus status);
 
     @Query("select a.position.positionTitle,count(a) from ApplicationModel a group by a.position.positionTitle")
     List<Object[]> countApplicationsByPosition();
 
-    Boolean existsByCandidateCandidateIdAndPositionPositionId(Integer candidateId, Integer positionId);
+
+    boolean existsByCandidateCandidateIdAndPositionPositionId(Integer candidateId, Integer positionId);
 
     @Query(value = "SELECT position_id FROM tbl_application WHERE candidate_id = :candidateId", nativeQuery = true)
     List<Integer> findAppliedPositionIdsByCandidateId(@Param("candidateId") Integer candidateId);
 
-    Page<ApplicationModel> findByApplicationStatusApplicationStatusAndPositionPositionId(ApplicationStatus applicationStatus, Integer positionId, Pageable pageable);
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
+    Page<ApplicationModel>
+        findByApplicationStatusApplicationStatusAndPositionPositionId
+            (ApplicationStatus applicationStatus, Integer positionId, Pageable pageable);
 
     Page<ApplicationModel> findByIsShortlistedTrueAndCandidateCandidateId(Integer candidateId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
     Page<ApplicationModel> findByIsShortlistedTrueAndPositionPositionId(Integer positionId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
     Page<ApplicationModel> findByIsShortlistedTrue(Pageable pageable);
 
     long countByIsShortlistedTrue();
 
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
     Page<ApplicationModel> findByCandidateCandidateId(Integer candidateId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
     Page<ApplicationModel> findByPositionPositionId(Integer positionId, Pageable pageable);
 
     @Query("""
@@ -191,8 +231,28 @@ public interface ApplicationRepository extends JpaRepository<ApplicationModel,In
             join a.position p
             order by a.createdAt ASC
             """)
-    Page<Object[]> findAllApplications(Pageable page);
+    Page<Object[]> findAllApplication(Pageable page);
 
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "shortlistedBy"
+    })
+    @Query("""
+    select a
+    from ApplicationModel a
+    where a.isShortlisted = false
+        """)
+    Page<ApplicationModel> findAllApplications(Pageable page);
+
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
     @Query("""
             select a
             from ApplicationModel a
@@ -210,6 +270,13 @@ public interface ApplicationRepository extends JpaRepository<ApplicationModel,In
             """)
     Page<ApplicationModel> findShortlistsByReviewer(Integer recruiterId, Pageable page);
 
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
     @Query("""
             select a
             from ApplicationModel a
@@ -226,4 +293,22 @@ public interface ApplicationRepository extends JpaRepository<ApplicationModel,In
             and a.shortlistedBy.userId = :reviewerId
             """)
     Page<ApplicationModel> findByShortlistedByPositionAndReviewer(Integer positionId,Integer reviewerId,Pageable pageable);
+
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
+    Page<ApplicationModel> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {
+            "candidate",
+            "position",
+            "applicationStatus",
+            "rounds",
+            "shortlistedBy"
+    })
+    Optional<ApplicationModel> findById(Integer applicationId);
 }

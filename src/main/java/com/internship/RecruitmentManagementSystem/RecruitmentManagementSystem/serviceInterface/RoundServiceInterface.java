@@ -2,11 +2,11 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundResultDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundStatusUpdateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.round.RoundUpdateDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundInterviewResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundResponseDto;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.round.RoundStatusResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.PaginatedResponse;
+import jakarta.validation.Valid;
 
 public interface RoundServiceInterface {
 
@@ -14,7 +14,7 @@ public interface RoundServiceInterface {
 
     void removeRound(Integer roundId);
 
-    RoundResponseDto getRound(Integer roundId);
+    RoundInterviewResponseDto getRound(Integer roundId);
 
     RoundResponseDto roundResult(Integer roundId, RoundResultDto roundResult);
 

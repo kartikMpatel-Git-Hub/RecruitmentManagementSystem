@@ -11,6 +11,7 @@ public class DocumentVerificationResponseDto {
 
     private Integer documentVerificationId;
     private Integer applicationId;
+    private Integer candidateId;
     private DocumentVerificationStatus verificationStatus;
     private String hrRemarks;
     private LocalDateTime verifiedAt;

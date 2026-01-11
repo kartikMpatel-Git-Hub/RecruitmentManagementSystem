@@ -3,9 +3,8 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.s
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.enums.JobStatus;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.BulkUploadJob;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.BulkUploadRowResult;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadJobRepository;
-import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.BulkUploadRowResultRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.AsyncServiceInterface;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ModelServiceInterface;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.BulkUploadCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
@@ -14,10 +13,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
@@ -27,19 +26,18 @@ import java.time.LocalDateTime;
 public class AsyncService implements AsyncServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncService.class);
-    private final BulkUploadJobRepository bulkUploadJobRepository;
-
-    private final BulkUploadRowResultRepository bulkUploadRowResultRepository;
     private final BulkCandidateService candidateService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ModelServiceInterface modelService;
 
     @Async
+    @CacheEvict(value = "candidateData", allEntries = true)
     public void processAsync(BulkUploadJob job, byte[] fileByte,String fileName) {
 
         logger.info("Async processing started for Job ID: {}", job.getJobId());
 
         job.setStatus(JobStatus.IN_PROGRESS);
-        bulkUploadJobRepository.save(job);
+        modelService.addBulkUploadJob(job);
 
         try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(fileByte))) {
 
@@ -81,7 +79,7 @@ public class AsyncService implements AsyncServiceInterface {
                     logger.error("Row {} failed: {}", i + 1, e.getMessage());
                 }
 
-                bulkUploadRowResultRepository.save(rowResult);
+                modelService.addBulkUploadRowResult(rowResult);
             }
 
             logger.info("Bulk Upload Completed for Job ID: {} | Success: {} | Failed: {}", job.getJobId(), success, failed);
@@ -91,7 +89,7 @@ public class AsyncService implements AsyncServiceInterface {
             job.setStatus(JobStatus.COMPLETED);
             job.setCompletedAt(LocalDateTime.now());
 
-            bulkUploadJobRepository.save(job);
+            modelService.addBulkUploadJob(job);
 
             eventPublisher.publishEvent(
                     new BulkUploadCompletedEvent(job.getJobId())
@@ -103,7 +101,7 @@ public class AsyncService implements AsyncServiceInterface {
             logger.error("Unexpected error while processing Job ID {}: {}", job.getJobId(), e.getMessage());
 
             job.setStatus(JobStatus.FAILED);
-            bulkUploadJobRepository.save(job);
+            modelService.addBulkUploadJob(job);
         }
     }
 

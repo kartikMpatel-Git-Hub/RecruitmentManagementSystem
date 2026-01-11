@@ -190,4 +190,12 @@ public class GlobalExceptionHandler {
 //    public ResponseEntity<?> UnexpectedRollbackExceptionHandler(UnexpectedRollbackException ex) {
 //        return new ResponseEntity<>("Something Went Wrong !",HttpStatus.BAD_REQUEST);
 //    }
+
+//    RegisterException
+    @ExceptionHandler(RegisterException.class)
+    public ResponseEntity<?> RegisterExceptionHandler(RegisterException ex) {
+        String message = ex.getErrors().stream().reduce("", (a, b) -> b + ", " + a);
+        return new ResponseEntity<>(message,HttpStatus.BAD_REQUEST);
+    }
 }
+

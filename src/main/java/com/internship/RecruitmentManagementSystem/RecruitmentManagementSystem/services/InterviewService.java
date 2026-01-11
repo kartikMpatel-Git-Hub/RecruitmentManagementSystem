@@ -100,7 +100,7 @@ public class InterviewService implements InterviewServiceInterface {
                 dto.getNumberOfInterviewers() != null && dto.getNumberOfInterviewers() > 0
 //                dto.getInterviewerIds() != null && !dto.getInterviewerIds().isEmpty()
         ) {
-            logger.debug("Assigning {} interviewers to interviewId={}", dto.getInterviewerIds().size(), savedInterview.getInterviewId());
+//            logger.debug("Assigning {} interviewers to interviewId={}", dto.getInterviewerIds().size(), savedInterview.getInterviewId());
 //            Set<InterviewInterviewerModel> interviewers = dto.getInterviewerIds().stream().map(id -> {
 //                UserModel interviewer = userRepository.findById(id)
 //                        .orElseThrow(() -> {
@@ -153,7 +153,7 @@ public class InterviewService implements InterviewServiceInterface {
             interviewInterviewerRepository.saveAll(interviewers);
             savedInterview.getInterviewers().addAll(interviewers);
             interviewers.forEach(interviewer ->{
-                mailToInterviewer(interviewer.getInterviewer().getUsername(),
+                emailService.mailToInterviewer(interviewer.getInterviewer().getUsername(),
                         interviewer.getInterviewer().getUserEmail(),
                         candidateName,
                         interviewDate,
@@ -163,7 +163,7 @@ public class InterviewService implements InterviewServiceInterface {
                         interviewerList.toString()
                 );
             });
-            mailToCandidate(
+            emailService.mailToCandidate(
                     candidateName,
                     candidateEmail,
                     interviewDate,
@@ -175,60 +175,6 @@ public class InterviewService implements InterviewServiceInterface {
             logger.info("Assigned {} interviewers successfully to interviewId={}", interviewers.size(), savedInterview.getInterviewId());
         }
         return true;
-    }
-
-    private void mailToCandidate(String candidateName,
-                                 @NotEmpty(message = "Email Can't Be Empty !")
-                                 @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",message = "Invalid email format!")
-                                 String candidateEmail,
-                                 String interviewDate,
-                                 String interviewTime,
-                                 String interviewerList,
-                                 String jobRole,
-                                 String link) {
-        String mailBody = templateBuilder.buildCandidateInterviewTemplate(
-                candidateName,
-                interviewDate,
-                interviewTime,
-                interviewerList,
-                jobRole,
-                link
-        );
-
-        emailService.sendMail(
-                "kartikpatel7892@gmail.com",
-                candidateEmail,
-                "Your Interview is Scheduled",
-                mailBody
-        );
-    }
-
-    private void mailToInterviewer(String username,
-                                   @NotEmpty(message = "Email Can't Be Empty !")
-                                   @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",message = "Invalid email format!")
-                                   String userEmail,
-                                   String candidateName,
-                                   String interviewDate,
-                                   String interviewTime,
-                                   String jobRole,
-                                   String link,
-                                   String interviewerList) {
-        String mailBody = templateBuilder.buildInterviewerInterviewTemplate(
-                username,
-                candidateName,
-                interviewDate,
-                interviewTime,
-                interviewerList,
-                jobRole,
-                link
-        );
-
-        emailService.sendMail(
-                "kartikpatel7892@gmail.com",
-                userEmail,
-                "Upcoming Interview Assigned",
-                mailBody
-        );
     }
 
     private InterviewerFeedbackModel createInterviewFeedback(List<PositionRequirementModel> positionRequirements,boolean isSkillRating) {
@@ -314,22 +260,6 @@ public class InterviewService implements InterviewServiceInterface {
                     logger.error("Interview not found with interviewId = {}", interviewId);
                     return new ResourceNotFoundException("Interview", "interviewId", interviewId.toString());
                 });
-        existingInterview.getInterviewers().clear();
-        if(dto.getInterviewerIds() != null){
-            dto.getInterviewerIds().forEach(interviewer ->{
-                UserModel newInterviewer = userRepository.findById(interviewer)
-                        .orElseThrow(() -> {
-                            logger.error("Interviewer not found with interviewerId={}", interviewer);
-                            return new ResourceNotFoundException("Interviewer", "interviewerId", interviewer.toString());
-                        });
-                InterviewInterviewerModel interviewInterviewer = new InterviewInterviewerModel();
-                interviewInterviewer.setInterview(existingInterview);
-                interviewInterviewer.setInterviewer(newInterviewer);
-                boolean isSkillRating = existingInterview.getRound().getRoundType().equals(RoundType.TECHNICAL);
-                interviewInterviewer.setInterviewerFeedback(createInterviewFeedback(existingInterview.getRound().getApplication().getPosition().getPositionRequirements(),isSkillRating));
-                existingInterview.getInterviewers().add(interviewInterviewer);
-            });
-        }
         existingInterview.setInterviewLink(dto.getInterviewLink());
         existingInterview.setInterviewDate(dto.getInterviewDate());
         existingInterview.setInterviewEndTime(dto.getInterviewEndTime());
@@ -584,7 +514,7 @@ public class InterviewService implements InterviewServiceInterface {
         logger.trace("Mapping UserModel -> UserResponseDto for ID: {}", entity.getUserId());
         UserMinimalResponseDto userResponseDto = new UserMinimalResponseDto();
         userResponseDto.setUserId(entity.getUserId());
-        userResponseDto.setUserName(entity.getUsername());
+        userResponseDto.setUsername(entity.getUsername());
         userResponseDto.setUserEmail(entity.getUserEmail());
         userResponseDto.setUserImageUrl(entity.getUserImageUrl());
         return userResponseDto;

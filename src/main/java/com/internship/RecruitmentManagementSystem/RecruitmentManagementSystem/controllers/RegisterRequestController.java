@@ -23,7 +23,7 @@ public class RegisterRequestController {
     private static final Logger logger = LoggerFactory.getLogger(RegisterRequestController.class);
     private final RegisterService registerService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     @DeleteMapping("/{registerId}")
     public ResponseEntity<?> deleteUser(@PathVariable Integer registerId) {
         logger.info("Attempting to Reject Request with ID: {}", registerId);
@@ -38,7 +38,7 @@ public class RegisterRequestController {
         return ResponseEntity.ok(new ApiResponse(200, "Reject Request Successfully", true));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     @GetMapping
     public ResponseEntity<PaginatedResponse<RegisterUserResponseDto>> getAllRegisterRequest(
             @RequestParam(defaultValue = "0") Integer page,
@@ -50,7 +50,7 @@ public class RegisterRequestController {
         return ResponseEntity.ok(registerService.getAllRequest(page, size, sortBy, sortDir));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     @GetMapping("/{registerId}")
     public ResponseEntity<UserResponseDto> acceptRequest(@PathVariable Integer registerId) {
         logger.info("Fetching user profile by ID: {}", registerId);
@@ -58,7 +58,7 @@ public class RegisterRequestController {
         return ResponseEntity.ok(res);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     @GetMapping("/count")
     public ResponseEntity<Long> countRequest() {
         var res = registerService.countRequest();

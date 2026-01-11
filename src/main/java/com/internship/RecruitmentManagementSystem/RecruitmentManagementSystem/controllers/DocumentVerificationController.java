@@ -65,7 +65,7 @@ public class DocumentVerificationController {
     }
 
     @PatchMapping("/document/{documentId}/review")
-    @PreAuthorize("hasAnyRole('HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public ResponseEntity<?> reviewDocument(
             @PathVariable Integer documentId,
             @RequestBody @Valid DocumentReviewRequestDto requestDto
@@ -85,7 +85,7 @@ public class DocumentVerificationController {
     }
 
     @DeleteMapping("/document/{documentId}")
-    @PreAuthorize("hasAnyRole('HR','CANDIDATE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','CANDIDATE')")
     public ResponseEntity<?> deleteDocument(
             @PathVariable Integer documentId
     ) {
@@ -103,7 +103,7 @@ public class DocumentVerificationController {
     }
 
     @PatchMapping("/{documentVerificationId}/finalize")
-    @PreAuthorize("hasAnyRole('HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public ResponseEntity<?> finalizeVerification(
             @PathVariable Integer documentVerificationId
     ) {
@@ -123,6 +123,7 @@ public class DocumentVerificationController {
     }
 
     @GetMapping("/{applicationId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public  ResponseEntity<?> getDocumentVerificationApplication(@PathVariable Integer applicationId){
         log.info("Fetching Document Verification application by id : {}",applicationId);
         var res = documentVerificationService.getDocumentVerificationApplicationByApplication(applicationId);
@@ -131,7 +132,7 @@ public class DocumentVerificationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public ResponseEntity<?> getDocumentVerificationApplications(
             @RequestParam(required = false) DocumentVerificationStatus status,
             @RequestParam(defaultValue = "0") int page,

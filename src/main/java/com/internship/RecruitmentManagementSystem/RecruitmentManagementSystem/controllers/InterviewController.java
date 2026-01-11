@@ -25,7 +25,7 @@ public class InterviewController {
     private static final Logger log = LoggerFactory.getLogger(InterviewController.class);
     private final InterviewService interviewService;
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<String> createInterview(@RequestBody InterviewCreateDto dto) {
         log.info("POST /interviews -> Creating interview with data: {}", dto);
         var createdInterview = interviewService.createInterview(dto);
@@ -77,11 +77,11 @@ public class InterviewController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/complete/{interviewId}")
+    @GetMapping("/{interviewId}/complete")
     public ResponseEntity<?> interviewComplete(
             @PathVariable Integer interviewId
     ){
-        log.info("PUT /interviews/complete/{} -> complete interview for interviewId={}",interviewId,interviewId);
+        log.info("PATCH /interviews/complete/{} -> complete interview for interviewId={}",interviewId,interviewId);
         var response = interviewService.interviewComplete(interviewId);
         log.info("Interview Completed With inteviewId={}",interviewId);
         return new ResponseEntity<>(response,HttpStatus.OK);

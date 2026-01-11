@@ -24,7 +24,7 @@ public class RoundController {
     private final RoundService roundService;
 
     @PostMapping("/applications/{applicationId}")
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
     public ResponseEntity<?> addRound(
             @PathVariable Integer applicationId,
             @RequestBody @Valid RoundCreateDto roundDto
@@ -36,7 +36,7 @@ public class RoundController {
     }
 
     @PutMapping("/{roundId}")
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
     public ResponseEntity<?> updateRound(
             @PathVariable Integer roundId,
             @RequestBody @Valid RoundUpdateDto roundDto
@@ -48,11 +48,11 @@ public class RoundController {
     }
 
     @PutMapping("/pass/{roundId}")
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
     public ResponseEntity<?> roundResult(
             @PathVariable Integer roundId,
             @RequestBody @Valid RoundResultDto roundResult
-            ) {
+    ) {
         log.info("Pass round with ID: {}", roundId);
         var result = roundService.roundResult(roundId,roundResult);
         log.info("Round Pass successfully with ID: {}", roundId);
@@ -60,7 +60,7 @@ public class RoundController {
     }
 
     @DeleteMapping("/{roundId}")
-    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECRUITER','HR')")
     public ResponseEntity<?> deleteRound(
             @PathVariable Integer roundId
     ) {

@@ -20,7 +20,7 @@ public class DocumentVerificationModel extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer documentVerificationId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "application_id", nullable = false, unique = true)
     private ApplicationModel application;
 
@@ -29,7 +29,7 @@ public class DocumentVerificationModel extends BaseEntity {
 
     private String hrRemarks;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "verified_by")
     private UserModel verifiedBy;
 
@@ -38,7 +38,8 @@ public class DocumentVerificationModel extends BaseEntity {
     @OneToMany(
             mappedBy = "documentVerification",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
     )
     private List<DocumentModel> documents = new ArrayList<>();
 }

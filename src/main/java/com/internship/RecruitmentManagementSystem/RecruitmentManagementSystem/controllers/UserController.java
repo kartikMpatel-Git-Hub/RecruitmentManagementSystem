@@ -2,6 +2,8 @@ package com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.c
 
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.exception.exceptions.InvalidImageFormateException;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.AccountDetails;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.NewUserDto;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.user.UserUpdateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.response.user.UserResponseDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.payloads.responses.ApiResponse;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,8 +39,15 @@ public class UserController {
     private final FileService fileService;
     private final CandidateService candidateService;
 
-    @Value("${project.image}")
-    private String path;
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody @Valid NewUserDto request) {
+        logger.info("Attempting to create a new user with username: {}", request.getUserName());
+
+        var createdUser = userService.createUser(request);
+        logger.info("Successfully created user with ID: {}", createdUser.getUserId());
+        return ResponseEntity.ok(createdUser);
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{userId}")
@@ -86,25 +96,13 @@ public class UserController {
             @RequestPart(value = "accountInfo", required = false) AccountDetails accountDetails) {
 
         logger.info("Attempting to update user with ID: {}", userId);
-
-        try {
-            if (userImage != null && !userImage.isEmpty()) {
-                String fileName = fileService.uploadImage(path, userImage);
-                request.setUserImageUrl(fileName);
-                logger.info("Uploaded user image for user ID: {}", userId);
-            }
-
-            var updatedUser = userService.updateUser(request, userId, accountDetails);
-            logger.info("Successfully updated user with ID: {}", userId);
-            return ResponseEntity.ok(updatedUser);
-
-        } catch (InvalidImageFormateException e) {
-            logger.error("Invalid image format for user ID {}: {}", userId, e.getMessage());
-            return createErrorResponse("Invalid image format: " + e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error updating user with ID {}: {}", userId, e.getMessage());
-            return createErrorResponse("Something went wrong while updating user: " + e.getMessage());
+        if (userImage != null && !userImage.isEmpty()) {
+            logger.info("Uploaded user image for user ID: {}", userId);
         }
+        var updatedUser = userService.updateUser(request, userId, accountDetails,userImage);
+        logger.info("Successfully updated user with ID: {}", userId);
+        return ResponseEntity.ok(updatedUser);
+
     }
 
     @PreAuthorize("hasRole('ADMIN')")

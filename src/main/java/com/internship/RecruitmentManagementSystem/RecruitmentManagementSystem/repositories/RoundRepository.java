@@ -10,7 +10,8 @@ import java.util.List;
 
 public interface RoundRepository extends JpaRepository<RoundModel,Integer> {
 
-    Page<RoundModel> findByApplicationApplicationId(Integer applicationId, Pageable pageable);
+    List<RoundModel> findByApplicationApplicationId(Integer applicationId);
+    Page<RoundModel> findByApplicationApplicationId(Integer applicationId,Pageable pageable);
 
     Page<RoundModel> findByApplicationCandidateCandidateId(Integer candidateId,Pageable pageable);
 

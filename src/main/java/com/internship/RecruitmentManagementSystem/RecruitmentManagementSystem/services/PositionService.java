@@ -294,7 +294,7 @@ public class PositionService implements PositionServiceInterface {
     @Cacheable(value = "positionData", key = "'page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
     public PaginatedResponse<PositionResponseDto> getAllPositions(Integer page, Integer size, String sortBy, String sortDir) {
         logger.debug("Fetching all positions page={}, size={}, sortBy={}, sortDir={}", page, size, sortBy, sortDir);
-        return getPaginatedPosition(positionRepository.findAll(getPageable(page, size, sortBy, sortDir)));
+        return getPaginatedPosition(positionRepository.findAllWithUser(getPageable(page, size, sortBy, sortDir)));
     }
 
     @Override

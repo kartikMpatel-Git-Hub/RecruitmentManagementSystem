@@ -13,7 +13,7 @@ public class SkillRatingModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer skillRatingId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "feedback_id")
     private InterviewerFeedbackModel feedback;
 

@@ -4,6 +4,7 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationCreateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.dtos.request.application.ApplicationStatusUpdateDto;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.models.model.UserModel;
+import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.ApplicationServiceInterface;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.services.ApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class ApplicationController {
 
     private static final Logger log = LoggerFactory.getLogger(ApplicationController.class);
-    private final ApplicationService applicationService;
+    private final ApplicationServiceInterface applicationService;
 
     @PostMapping
     public ResponseEntity<?> createApplication(@RequestBody @Valid ApplicationCreateDto newApplication) {

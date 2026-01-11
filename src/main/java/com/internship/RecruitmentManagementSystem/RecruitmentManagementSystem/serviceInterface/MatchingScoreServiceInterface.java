@@ -5,6 +5,6 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.mo
 
 public interface MatchingScoreServiceInterface {
 
-    public double calculateMatchingScore(CandidateModel candidate, PositionModel position);
+    double calculateMatchingScore(CandidateModel candidate, PositionModel position);
 
 }

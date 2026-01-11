@@ -19,13 +19,9 @@ import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.re
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.repositories.DocumentVerificationRepository;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.serviceInterface.DocumentVerificationServiceInterface;
 import com.internship.RecruitmentManagementSystem.RecruitmentManagementSystem.utilities.HtmlTemplateBuilder;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
-import org.hibernate.annotations.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -55,8 +51,8 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
     private final MatchingScoreService matchingScoreService;
     private final EmailService emailService;
     private final FileService fileService;
-    @Value("${project.image}")
-    private String path;
+    private final ModelService modelService;
+
 
     @Override
     @Transactional
@@ -66,7 +62,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
         }
     )
     public void uploadDocument(Integer applicationId,
-                               MultipartFile file) throws InvalidImageFormateException, IOException {
+                               MultipartFile file) throws InvalidImageFormateException {
         DocumentVerificationModel verification =
                 documentVerificationRepository.findByApplicationApplicationId(applicationId)
                         .orElseThrow(
@@ -84,7 +80,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
 
         DocumentModel document = new DocumentModel();
         document.setDocumentName(file.getOriginalFilename());
-        document.setDocumentUrl(fileService.uploadImage(path,file));
+        document.setDocumentUrl(fileService.uploadImage(file));
         document.setDocumentStatus(DocumentStatus.UPLOADED);
         document.setDocumentVerification(verification);
 
@@ -98,7 +94,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
             @CacheEvict(value = "applicationData",allEntries = true)
         }
     )
-    public void editDocument(Integer documentId, MultipartFile file) throws InvalidImageFormateException, IOException {
+    public void editDocument(Integer documentId, MultipartFile file) throws InvalidImageFormateException {
         DocumentModel document = documentRepository.findById(documentId).orElseThrow(
                 ()->new ResourceNotFoundException("Document","documentId",documentId.toString())
         );
@@ -106,7 +102,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
             throw new SomethingWrongException("Document verification already completed. Upload not allowed.");
         }
         document.setDocumentName(file.getOriginalFilename());
-        document.setDocumentUrl(fileService.uploadImage(path,file));
+        document.setDocumentUrl(fileService.uploadImage(file));
         document.setDocumentStatus(DocumentStatus.UPLOADED);
 
         documentRepository.save(document);
@@ -126,12 +122,20 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
                         () -> new ResourceNotFoundException("DocumentModel","documentId",documentId.toString())
                 );
 
-        if (req.getDocumentStatus() == DocumentStatus.REJECTED && req.getRejectionReason() == null) {
-            throw new SomethingWrongException("Reject Reason Not Found !");
+        if (req.getDocumentStatus() == DocumentStatus.REJECTED) {
+            ApplicationModel application = document.getDocumentVerification().getApplication();
+            emailService.documentRejectMailToCandidate(application.getCandidate().getUser().getUsername(),
+                    application.getCandidate().getUser().getUserEmail(),
+                    application.getPosition().getPositionTitle(),
+                    req.getRejectionReason() != null ? req.getRejectionReason()
+                            : "Your document has been rejected. "
+                            + "Upload Rejected Document Again !"
+            );
+//            throw new SomethingWrongException("Reject Reason Not Found !");
         }
 
         document.setDocumentStatus(req.getDocumentStatus());
-        document.setRejectionReason(req.getRejectionReason());
+        document.setRejectionReason(req.getRejectionReason() != null ? req.getRejectionReason() : "");
     }
 
     @Override
@@ -173,11 +177,8 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
 
         if (anyRejected) {
             verification.setVerificationStatus(DocumentVerificationStatus.REJECTED);
-            documentRejectMailToCandidate(application.getCandidate().getUser().getUsername(),
-                    application.getCandidate().getUser().getUserEmail(),
-                    application.getPosition().getPositionTitle(),
-                    "Check System For More Detail !"
-                    );
+            application.getApplicationStatus().setApplicationStatus(ApplicationStatus.REJECTED);
+            application.getApplicationStatus().setApplicationFeedback("Document Verification Failed");
             return;
         }
 
@@ -193,7 +194,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
 
 
         application.getApplicationStatus().setApplicationStatus(ApplicationStatus.HIRED);
-        hireMailToCandidate(application.getCandidate().getUser().getUsername(),
+        emailService.hireMailToCandidate(application.getCandidate().getUser().getUsername(),
                 application.getCandidate().getUser().getUserEmail(),
                 application.getPosition().getPositionTitle(),
                 application.getPosition().getPositionLocation()
@@ -201,7 +202,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
     }
 
     @Override
-    @Cacheable(value = "documentVerification",key = "'document_verification_status_'+#status+'_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
+//    @Cacheable(value = "documentVerification",key = "'document_verification_status_'+#status+'_page_'+#page+'_' + 'size_'+#size+'_' + 'sortBy_'+#sortBy+'_'+'sortDir'+#sortDir")
     public PaginatedResponse<DocumentVerificationResponseDto> getAllDocumentVerificationApplications(DocumentVerificationStatus status, Integer page, Integer size, String sortBy, String sortDir) {
         logger.info("Fetching all Document Verification Applications - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
         Page<DocumentVerificationModel> raw =
@@ -212,9 +213,10 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
         logger.info("Fetched {} applications ", response.getData().size());
         return response;
     }
+
 //    documentVerification
     @Override
-    @Cacheable(value = "documentVerification",key = "'document_verification_applicationId_'+#applicationId")
+//    @Cacheable(value = "documentVerification",key = "'document_verification_applicationId_'+#applicationId")
     public DocumentVerificationResponseDto getDocumentVerificationApplicationByApplication(Integer applicationId) {
         DocumentVerificationModel documentVerification = documentVerificationRepository.findByApplicationApplicationId(applicationId).orElseThrow(
                 ()->new ResourceNotFoundException("DocumentVerificationModel","applicationId",applicationId.toString())
@@ -249,6 +251,7 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
     private DocumentVerificationResponseDto convert(DocumentVerificationModel model) {
         DocumentVerificationResponseDto dto = new DocumentVerificationResponseDto();
         dto.setApplicationId(model.getApplication().getApplicationId());
+        dto.setCandidateId(model.getApplication().getCandidate().getCandidateId());
         dto.setDocumentVerificationId(model.getDocumentVerificationId());
         dto.setDocuments(model.getDocuments().stream().map(this::convert).toList());
         dto.setHrRemarks(model.getHrRemarks());
@@ -270,44 +273,4 @@ public class DocumentVerificationService implements DocumentVerificationServiceI
 
         return dto;
     }
-
-    private void hireMailToCandidate(String candidateName,
-                                 @NotEmpty(message = "Email Can't Be Empty !")
-                                 @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",message = "Invalid email format!")
-                                 String candidateEmail,
-                                 String jobRole,
-                                 String jobLocation
-    ) {
-        String mailBody = templateBuilder.buildCandidateHiredTemplate(candidateName,jobRole,jobLocation);
-
-        emailService.sendMail(
-                "kartikpatel7892@gmail.com",
-                candidateEmail,
-                "Congratulations! You’re Hired",
-                mailBody
-        );
-    }
-    private void documentRejectMailToCandidate(String candidateName,
-                                 @NotEmpty(message = "Email Can't Be Empty !")
-                                 @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",message = "Invalid email format!")
-                                 String candidateEmail,
-                                 String jobRole,
-                                 String rejectReason
-    ) {
-        String mailBody = templateBuilder.buildDocumentRejectMail(
-                "Test Company Pvt.Ltd",
-                candidateName,
-                jobRole,
-                rejectReason,
-                "Login To System !"
-        );
-
-        emailService.sendMail(
-                "kartikpatel7892@gmail.com",
-                candidateEmail,
-                "Congratulations! You’re Hired",
-                mailBody
-        );
-    }
-
 }

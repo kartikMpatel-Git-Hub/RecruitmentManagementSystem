@@ -12,13 +12,13 @@ import lombok.Setter;
 @Deprecated
 public class CandidateEducationDto {
 
-    Integer candidateEducationId;
+//    Integer candidateEducationId;
     Integer candidate;
-    String candidateName;
+//    String candidateName;
     Integer university;
-    String universityName;
+//    String universityName;
     Integer degree;
-    String degreeName;
+//    String degreeName;
     Double percentage;
     Integer passingYear;
 

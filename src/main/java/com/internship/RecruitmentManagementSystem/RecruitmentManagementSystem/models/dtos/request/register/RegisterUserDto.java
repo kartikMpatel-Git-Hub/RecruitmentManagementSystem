@@ -10,7 +10,7 @@ public class RegisterUserDto {
 
     private String userEmail;
 
-    private String role;
+    private String roleName;
 
     private String userImageUrl;
 }

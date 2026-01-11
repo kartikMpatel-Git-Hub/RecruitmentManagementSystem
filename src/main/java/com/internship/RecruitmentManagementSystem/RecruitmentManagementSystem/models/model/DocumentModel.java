@@ -25,7 +25,7 @@ public class DocumentModel extends BaseEntity {
 
     private String rejectionReason;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "document_verification_id", nullable = false)
     private DocumentVerificationModel documentVerification;
 }

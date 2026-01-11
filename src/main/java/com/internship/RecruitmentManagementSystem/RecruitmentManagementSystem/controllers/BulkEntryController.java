@@ -53,13 +53,16 @@ public class BulkEntryController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<?> getAllBulkEntries() {
+    public ResponseEntity<?> getAllBulkEntries(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "jobId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
 
         logger.info("Request received to fetch all bulk upload entries");
-
-        var res = bulkUploadJobService.getAllBulkEntries();
-        logger.debug("Total bulk upload jobs fetched: {}", res.size());
-
+        var res = bulkUploadJobService.getAllBulkEntries(page,size,sortBy,sortDir);
+        logger.debug("Total bulk upload jobs fetched: {}", res.getData().size());
         logger.info("Successfully fetched all bulk upload entries");
         return ResponseEntity.ok(res);
     }

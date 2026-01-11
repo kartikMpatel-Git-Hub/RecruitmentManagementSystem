@@ -85,4 +85,10 @@ public interface PositionRepository extends JpaRepository<PositionModel,Integer>
             """)
     Page<PositionModel> findPositionByRecruiter(Integer recruiterId,Pageable pageable);
 
+    @Query("""
+    select p
+    from PositionModel p
+    join fetch p.createdBy u
+    """)
+    Page<PositionModel> findAllWithUser(Pageable pageable);
 }

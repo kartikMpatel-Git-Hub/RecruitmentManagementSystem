@@ -29,7 +29,7 @@ public class InterviewModel extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer interviewId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "round_id")
     private RoundModel round;
 
@@ -51,6 +51,6 @@ public class InterviewModel extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private InterviewStatus interviewStatus;
 
-    @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<InterviewInterviewerModel> interviewers = new HashSet<>();
 }

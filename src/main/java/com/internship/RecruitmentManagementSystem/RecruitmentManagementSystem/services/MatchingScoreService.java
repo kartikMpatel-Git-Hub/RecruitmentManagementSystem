@@ -58,8 +58,17 @@ public class MatchingScoreService implements MatchingScoreServiceInterface {
                 .filter(cs -> cs.getSkill() != null)
                 .collect(Collectors.toMap(
                         cs -> cs.getSkill().getSkillId(),
-                        cs -> cs
+                        cs -> cs,
+                        (existing, duplicate) -> {
+                            if (duplicate.getYearsOfExperience() != null &&
+                                    existing.getYearsOfExperience() != null &&
+                                    duplicate.getYearsOfExperience() > existing.getYearsOfExperience()) {
+                                return duplicate;
+                            }
+                            return existing;
+                        }
                 ));
+
 
         logger.debug("Total position skill requirements: {}", positionRequirements.size());
         logger.debug("Candidate skills available: {}", candidateSkillMap.keySet());
@@ -180,9 +189,10 @@ public class MatchingScoreService implements MatchingScoreServiceInterface {
         }
 
         double preNormalized = skillScore + experienceScore + educationScore;
-        score = skillScore > 60 ? 60 : skillScore  +
-                experienceScore > 20 ? 20 : experienceScore +
-                educationScore > 20 ? 20 : educationScore;
+        score = (skillScore > 60 ? 60 : skillScore) +
+                        (experienceScore > 20 ? 20 : experienceScore) +
+                        (educationScore > 20 ? 20 : educationScore);
+
 
         if (score < 0) score = 0.0;
         if (score > 100) score = 100.0;
